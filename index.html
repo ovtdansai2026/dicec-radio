@@ -3,89 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบลงทะเบียนกิจกรรม</title>
+    <title>DJ Queue Dashboard - ด่านซ้ายเรดิโอ</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📻</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Prompt', sans-serif; background: #0f172a; }
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; background-color: #0f172a; color: white; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="p-6 text-slate-200 min-h-screen flex items-center justify-center">
+<body class="h-screen w-full flex flex-col overflow-hidden select-none">
 
-    <div class="max-w-md w-full glass-card bg-slate-900 border border-slate-700 p-8 rounded-3xl shadow-2xl">
-        <h1 id="actTitle" class="text-2xl font-bold text-blue-400 mb-2 text-center">กำลังโหลดกิจกรรม...</h1>
-        <p id="deadlineText" class="text-xs text-slate-400 text-center mb-6"></p>
+    <div id="passwordOverlay" class="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center z-[9999] p-4 select-none">
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-md text-center shadow-2xl border border-slate-700/50">
+            <h2 class="text-2xl sm:text-3xl font-bold text-blue-400 mb-6 flex items-center justify-center gap-2">
+                🔑 กรุณากรอกรหัสผ่าน
+            </h2>
+            <input type="password" id="pwdInput" class="w-full bg-slate-800 text-white text-center text-xl sm:text-2xl py-2.5 sm:py-3 px-4 rounded-xl border border-slate-600 focus:outline-none focus:border-blue-500 mb-6 transition-all" placeholder="ป้อนรหัสผ่านที่นี่">
+            <button id="submitPwd" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 sm:py-4 rounded-xl text-lg sm:text-xl shadow-lg transition-all transform active:scale-95">
+                ยืนยันรหัสผ่าน
+            </button>
+            <p id="pwdError" class="text-red-400 mt-4 text-base sm:text-lg hidden">รหัสผ่านไม่ถูกต้อง ลองอีกครั้ง</p>
+        </div>
+    </div>
 
-        <form id="uploadForm" class="space-y-4">
-            <div>
-                <label class="block text-sm font-semibold mb-1">ชื่อ-นามสกุล</label>
-                <input type="text" id="studentName" required class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white">
+    <header class="p-3 sm:p-5 bg-slate-900 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 shadow-lg z-10">
+        <h1 class="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-400 drop-shadow-md text-center sm:text-left">📻 ด่านซ้ายเรดิโอ - ระบบจัดการคิวเพลง</h1>
+        <div class="flex items-center space-x-3 sm:space-x-6 text-sm sm:text-base lg:text-lg">
+            <div id="loadingIndicator" class="hidden flex items-center text-yellow-400 font-medium text-xs sm:text-sm">
+                <svg class="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                กำลังอัปเดต...
             </div>
-            <div>
-                <label class="block text-sm font-semibold mb-1">เลือกรูปหลักฐาน (รูปถ่ายตัวเอง)</label>
-                <input type="file" id="fileInput" accept="image/*" required class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+            <span class="text-gray-300 bg-slate-800 px-3 py-1 sm:px-4 sm:py-1 rounded-full border border-slate-600 text-xs sm:text-sm">เวลาทำการ: 12:30 - 13:30</span>
+        </div>
+    </header>
+
+    <div class="flex-grow flex flex-col sm:flex-row overflow-hidden">
+        
+        <main class="w-full sm:w-[65%] md:w-[70%] h-[55%] sm:h-full flex flex-col justify-center items-center p-3 sm:p-6 md:p-8 relative bg-[#0f172a] border-b sm:border-b-0 border-slate-700">
+            
+            <div id="noQueueMessage" class="text-center text-gray-500 flex flex-col items-center p-4">
+                <h2 class="text-2xl sm:text-4xl font-semibold mb-2 sm:mb-3">ตอนนี้ยังไม่มีคิวเพลง</h2>
+                <p class="text-base sm:text-2xl opacity-70">รอนักเรียนส่งเข้ามาสักครู่นะครับ...</p>
             </div>
-            <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-bold transition-all">ส่งข้อมูลลงทะเบียน</button>
-        </form>
-        <div id="status" class="mt-4 text-center text-sm font-bold hidden"></div>
+
+            <div id="currentSongBox" class="w-full max-w-6xl hidden flex-col items-center animate-fade-in h-full justify-between sm:justify-center py-1 sm:py-4">
+                <div class="mb-1 sm:mb-4 text-center">
+                    <span class="bg-yellow-500 text-slate-900 font-bold text-xs sm:text-lg md:text-xl px-4 py-1 sm:px-6 sm:py-2 rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(234,179,8,0.5)]">กำลังรอเล่น (คิวปัจจุบัน)</span>
+                </div>
+                
+                <div class="glass-panel w-full rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-8 md:p-12 text-center shadow-2xl relative overflow-hidden flex-grow sm:flex-grow-0 flex flex-col justify-center my-1 sm:my-4">
+                    <p class="text-gray-400 text-sm sm:text-xl md:text-2xl mb-1 sm:mb-4">ผู้ขอ: <span id="c_sender" class="text-white font-medium">กำลังโหลด...</span></p>
+                    
+                    <h2 id="c_song" class="text-xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-2 sm:mb-8 drop-shadow-xl break-words line-clamp-3">กำลังโหลด...</h2>
+                    
+                    <div id="msg_container" class="bg-slate-800/80 inline-block px-4 py-2 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-600 w-full max-w-4xl hidden">
+                        <p class="text-blue-400 text-xs sm:text-lg md:text-xl mb-1 font-medium">ฝากข้อความถึงดีเจ:</p>
+                        <p id="c_msg" class="text-sm sm:text-xl md:text-3xl text-gray-100 italic font-light line-clamp-3">"..."</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between w-full max-w-5xl gap-3 sm:gap-6 md:gap-10">
+                    <button onclick="updateStatus('played')" class="flex-1 bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-white text-base sm:text-2xl md:text-4xl font-bold py-3 sm:py-6 md:py-10 rounded-2xl sm:rounded-3xl shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center border border-emerald-400/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-12 sm:w-12 md:h-16 md:w-16 mb-1 sm:mb-3 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        เล่นเพลงนี้แล้ว
+                    </button>
+
+                    <button onclick="updateStatus('skipped')" class="flex-1 bg-gradient-to-b from-rose-500 to-rose-700 hover:from-rose-600 hover:to-rose-800 text-white text-base sm:text-2xl md:text-4xl font-bold py-3 sm:py-6 md:py-10 rounded-2xl sm:rounded-3xl shadow-[0_0_30px_rgba(225,29,72,0.3)] transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center border border-rose-400/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-12 sm:w-12 md:h-16 md:w-16 mb-1 sm:mb-3 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        ข้ามคิวนี้
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <aside class="w-full sm:w-[35%] md:w-[30%] h-[45%] sm:h-full bg-slate-900 border-t sm:border-t-0 sm:border-l border-slate-700 flex flex-col shadow-2xl z-10 relative">
+            <div class="p-3 sm:p-6 border-b border-slate-700 bg-slate-800/80 flex justify-between items-center shadow-md z-10">
+                <h3 class="text-sm sm:text-lg md:text-xl font-bold text-blue-400 flex items-center gap-1.5 sm:gap-2 tracking-wide uppercase">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 sm:w-6 h-6">
+                        <path d="M5.055 7.06c-1.25-.714-2.805.189-2.805 1.628v8.123c0 1.44 1.555 2.342 2.805 1.628L12 14.471v2.34c0 1.44 1.555 2.342 2.805 1.628l7.108-4.061c1.26-.72 1.26-2.536 0-3.256L14.805 7.06C13.555 6.346 12 7.249 12 8.688v2.34L5.055 7.06z" />
+                    </svg>
+                    คิวต่อไป
+                </h3>
+                <div class="text-gray-400 text-xs sm:text-sm font-medium bg-slate-900 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full border border-slate-600">
+                    รอทั้งหมด: <span id="queueCount" class="font-bold text-white ml-1">0</span>
+                </div>
+            </div>
+            
+            <div id="nextQueueContainer" class="flex-grow overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3 custom-scrollbar bg-slate-900/50">
+            </div>
+        </aside>
+
     </div>
 
     <script>
-        // ดึงชื่อกิจกรรมและกำหนดเวลาจาก URL ที่ฝังมาใน QR Code
-        const params = new URLSearchParams(window.location.search);
-        const activityName = params.get('activity') || "กิจกรรมทั่วไป";
-        const deadline = params.get('deadline');
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbynRYFemd7P2tDOxjklQUPpwzrLJAAute9Lrpd8uRMyC9029qAfUvNEWpu-MXxWTso4/exec"; 
+        
+        let currentQueue = [];
+        let isUpdating = false;
 
-        document.getElementById('actTitle').innerText = activityName;
-        if (deadline && deadline !== "none") {
-            document.getElementById('deadlineText').innerText = "ปิดรับ: " + new Date(deadline).toLocaleString('th-TH');
+        function _v(p) {
+            let h = 0;
+            for (let i = 0; i < p.length; i++) {
+                h = (h << 5) - h + p.charCodeAt(i);
+                h |= 0;
+            }
+            return h === 106139376;
         }
 
-        const form = document.getElementById('uploadForm');
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            const status = document.getElementById('status');
-            
-            btn.disabled = true;
-            btn.innerText = "กำลังอัปโหลด...";
-            status.classList.remove('hidden', 'text-red-400', 'text-green-400');
-            status.innerText = "กำลังประมวลผลข้อมูล... กรุณารอสักครู่";
+        function checkPassword() {
+            const pwd = document.getElementById('pwdInput').value;
+            if (_v(pwd)) {
+                sessionStorage.setItem('authorized', 'true');
+                document.getElementById('passwordOverlay').remove();
+                startApp();
+            } else {
+                document.getElementById('pwdError').classList.remove('hidden');
+                document.getElementById('pwdInput').value = '';
+            }
+        }
 
-            const file = document.getElementById('fileInput').files[0];
-            const reader = new FileReader();
+        async function fetchQueue() {
+            if (isUpdating) return; 
             
-            reader.onload = async (event) => {
-                const payload = {
-                    action: "submit_activity",
-                    activity: activityName,
-                    studentName: document.getElementById('studentName').value,
-                    fileData: event.target.result
-                };
+            try {
+                const response = await fetch(`${GAS_API_URL}?action=getQueue`);
+                const data = await response.json();
+                currentQueue = data;
+                renderUI();
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
 
-                try {
-                    // ใช้ลิงก์ API เดียวกับหน้า Dashboard (ที่ผูกกับ Google Sheet กิจกรรม)
-                    const res = await fetch("https://script.google.com/macros/s/AKfycbx1i7PNiII3X0aMCOtUoC_4Qg3OrD33J_Hdb2d6VkagGfM1Vxx26pxycla6PKnirxgH/exec", {
-                        method: "POST",
-                        headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await res.json();
-                    
-                    if(result.status === "success") {
-                        status.className = "mt-4 text-center text-sm font-bold text-green-400";
-                        status.innerText = "✅ ส่งข้อมูลสำเร็จ!";
-                    } else {
-                        throw new Error();
+        function renderUI() {
+            const noQueueMessage = document.getElementById('noQueueMessage');
+            const currentSongBox = document.getElementById('currentSongBox');
+            const nextQueueContainer = document.getElementById('nextQueueContainer');
+            
+            document.getElementById('queueCount').innerText = currentQueue.length;
+
+            if (currentQueue.length === 0) {
+                noQueueMessage.classList.remove('hidden');
+                currentSongBox.classList.add('hidden');
+                currentSongBox.classList.remove('flex');
+                
+                nextQueueContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-gray-500 opacity-50 pb-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 sm:h-16 sm:w-16 mb-2 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                        </svg>
+                        <p class="text-sm sm:text-lg">ไม่มีคิวต่อไป</p>
+                    </div>
+                `;
+            } else {
+                noQueueMessage.classList.add('hidden');
+                currentSongBox.classList.remove('hidden');
+                currentSongBox.classList.add('flex');
+
+                const current = currentQueue[0];
+                document.getElementById('c_sender').innerText = current.sender;
+                document.getElementById('c_song').innerText = current.song;
+                
+                nextQueueContainer.innerHTML = '';
+                
+                if (currentQueue.length > 1) {
+                    for (let i = 1; i < currentQueue.length; i++) {
+                        const item = currentQueue[i];
+                        const div = document.createElement('div');
+                        div.className = "bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 shadow-sm flex flex-col gap-0.5 sm:gap-1 relative overflow-hidden transition-all hover:bg-slate-700/50";
+                        div.innerHTML = `
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                            <p class="text-white font-medium text-sm sm:text-lg leading-tight break-words pl-2 sm:pl-3">${item.song}</p>
+                            <p class="text-gray-400 text-xs sm:text-sm pl-2 sm:pl-3 mt-0.5">ขอโดย: <span class="text-blue-300 font-medium">${item.sender}</span></p>
+                        `;
+                        nextQueueContainer.appendChild(div);
                     }
-                } catch (err) {
-                    status.className = "mt-4 text-center text-sm font-bold text-red-400";
-                    status.innerText = "❌ เกิดข้อผิดพลาด ลองอีกครั้งครับ";
-                    btn.disabled = false;
-                    btn.innerText = "ส่งข้อมูลลงทะเบียน";
+                } else {
+                    nextQueueContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-gray-500 opacity-50 pb-10">
+                            <p class="text-sm sm:text-lg">ยังไม่มีคิวต่อไป</p>
+                        </div>
+                    `;
                 }
-            };
-            reader.readAsDataURL(file);
+            }
+        }
+
+        async function updateStatus(status) {
+            if (currentQueue.length === 0 || isUpdating) return;
+
+            if (status === 'skipped') {
+                const isConfirm = confirm("⚠️ แน่ใจหรือไม่ว่าจะ 'ข้าม' คิวนี้?\n(ข้อความไม่เหมาะสม หรือเปิดไม่ได้)");
+                if (!isConfirm) return;
+            }
+
+            const currentId = currentQueue[0].id;
+            isUpdating = true;
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+
+            try {
+                await fetch(`${GAS_API_URL}?action=updateStatus&id=${currentId}&status=${status}`);
+                currentQueue.shift();
+                renderUI();
+            } catch (error) {
+                alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ ลองใหม่อีกครั้ง");
+                console.error(error);
+            } finally {
+                isUpdating = false;
+                document.getElementById('loadingIndicator').classList.add('hidden');
+            }
+        }
+
+        function startApp() {
+            if (GAS_API_URL === "YOUR_GAS_WEB_APP_URL_HERE") {
+                alert("กรุณานำ Web App URL ของ Google Apps Script มาใส่ในไฟล์โค้ดก่อนใช้งานครับ");
+                return;
+            }
+            fetchQueue();
+            setInterval(fetchQueue, 3000);
+        }
+
+        window.onload = () => {
+            document.getElementById('pwdInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkPassword();
+            });
+            document.getElementById('submitPwd').addEventListener('click', checkPassword);
+
+            if (sessionStorage.getItem('authorized') === 'true') {
+                document.getElementById('passwordOverlay').remove();
+                startApp();
+            }
         };
     </script>
 </body>
