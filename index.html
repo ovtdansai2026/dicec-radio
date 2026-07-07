@@ -16,7 +16,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="h-screen w-full flex flex-col overflow-hidden select-none">
+<body class="h-screen w-full flex flex-col overflow-hidden">
 
     <div id="passwordOverlay" class="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center z-[9999] p-4 select-none">
         <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-md text-center shadow-2xl border border-slate-700/50">
@@ -31,14 +31,35 @@
         </div>
     </div>
 
-    <header class="p-3 sm:p-5 bg-slate-900 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 shadow-lg z-10">
+    <header class="p-3 sm:p-5 bg-slate-900 border-b border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-3 lg:gap-0 shadow-lg z-10 select-none">
         <h1 class="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-400 drop-shadow-md text-center sm:text-left">📻 ด่านซ้ายเรดิโอ - ระบบจัดการคิวเพลง</h1>
-        <div class="flex items-center space-x-3 sm:space-x-6 text-sm sm:text-base lg:text-lg">
+        <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-sm sm:text-base lg:text-lg">
             <div id="loadingIndicator" class="hidden flex items-center text-yellow-400 font-medium text-xs sm:text-sm">
                 <svg class="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 กำลังอัปเดต...
             </div>
-            <span class="text-gray-300 bg-slate-800 px-3 py-1 sm:px-4 sm:py-1 rounded-full border border-slate-600 text-xs sm:text-sm">เวลาทำการ: 12:30 - 13:30</span>
+            
+            <!-- แผงตั้งค่าเวลา และค่าดีเลย์กันพิมพ์รัว -->
+            <div class="flex flex-wrap items-center justify-center gap-2 text-gray-300 bg-slate-800 px-3 py-1.5 sm:px-4 sm:py-1 rounded-2xl sm:rounded-full border border-slate-600 text-xs sm:text-sm">
+                <div class="flex items-center space-x-1.5">
+                    <span>เวลาทำการ:</span>
+                    <input type="text" id="openTime" placeholder="12:30" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 text-white border border-slate-700 rounded px-1.5 py-0.5 text-center focus:outline-none focus:border-blue-500 w-[55px] sm:w-[65px]">
+                    <span>-</span>
+                    <input type="text" id="closeTime" placeholder="13:25" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 text-white border border-slate-700 rounded px-1.5 py-0.5 text-center focus:outline-none focus:border-blue-500 w-[55px] sm:w-[65px]">
+                </div>
+                
+                <span class="text-slate-600 hidden sm:inline">|</span>
+                
+                <div class="flex items-center space-x-1.5">
+                    <span>ดีเลย์คิว:</span>
+                    <input type="number" id="cooldown" placeholder="2" min="1" max="60" class="bg-slate-900 text-white border border-slate-700 rounded px-1.5 py-0.5 text-center focus:outline-none focus:border-blue-500 w-[45px] sm:w-[50px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <span>นาที</span>
+                </div>
+                
+                <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-medium px-3 py-0.5 rounded-lg text-xs transition-all ml-1">
+                    บันทึก
+                </button>
+            </div>
         </div>
     </header>
 
@@ -46,28 +67,28 @@
         
         <main class="w-full sm:w-[65%] md:w-[70%] h-[55%] sm:h-full flex flex-col justify-center items-center p-3 sm:p-6 md:p-8 relative bg-[#0f172a] border-b sm:border-b-0 border-slate-700">
             
-            <div id="noQueueMessage" class="text-center text-gray-500 flex flex-col items-center p-4">
+            <div id="noQueueMessage" class="text-center text-gray-500 flex flex-col items-center p-4 select-none">
                 <h2 class="text-2xl sm:text-4xl font-semibold mb-2 sm:mb-3">ตอนนี้ยังไม่มีคิวเพลง</h2>
                 <p class="text-base sm:text-2xl opacity-70">รอนักเรียนส่งเข้ามาสักครู่นะครับ...</p>
             </div>
 
             <div id="currentSongBox" class="w-full max-w-6xl hidden flex-col items-center animate-fade-in h-full justify-between sm:justify-center py-1 sm:py-4">
-                <div class="mb-1 sm:mb-4 text-center">
+                <div class="mb-1 sm:mb-4 text-center select-none">
                     <span class="bg-yellow-500 text-slate-900 font-bold text-xs sm:text-lg md:text-xl px-4 py-1 sm:px-6 sm:py-2 rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(234,179,8,0.5)]">กำลังรอเล่น (คิวปัจจุบัน)</span>
                 </div>
                 
                 <div class="glass-panel w-full rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-8 md:p-12 text-center shadow-2xl relative overflow-hidden flex-grow sm:flex-grow-0 flex flex-col justify-center my-1 sm:my-4">
-                    <p class="text-gray-400 text-sm sm:text-xl md:text-2xl mb-1 sm:mb-4">ผู้ขอ: <span id="c_sender" class="text-white font-medium">กำลังโหลด...</span></p>
+                    <p class="text-gray-400 text-sm sm:text-xl md:text-2xl mb-1 sm:mb-4 select-none">ผู้ขอ: <span id="c_sender" class="text-white font-medium select-text">กำลังโหลด...</span></p>
                     
-                    <h2 id="c_song" class="text-xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-2 sm:mb-8 drop-shadow-xl break-words line-clamp-3">กำลังโหลด...</h2>
+                    <h2 id="c_song" class="text-xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-2 sm:mb-8 drop-shadow-xl break-words line-clamp-3 select-text">กำลังโหลด...</h2>
                     
                     <div id="msg_container" class="bg-slate-800/80 inline-block px-4 py-2 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-600 w-full max-w-4xl hidden">
-                        <p class="text-blue-400 text-xs sm:text-lg md:text-xl mb-1 font-medium">ฝากข้อความถึงดีเจ:</p>
-                        <p id="c_msg" class="text-sm sm:text-xl md:text-3xl text-gray-100 italic font-light line-clamp-3">"..."</p>
+                        <p class="text-blue-400 text-xs sm:text-lg md:text-xl mb-1 font-medium select-none">ฝากข้อความถึงดีเจ:</p>
+                        <p id="c_msg" class="text-sm sm:text-xl md:text-3xl text-gray-100 italic font-light line-clamp-3 select-text">"..."</p>
                     </div>
                 </div>
 
-                <div class="flex justify-between w-full max-w-5xl gap-3 sm:gap-6 md:gap-10">
+                <div class="flex justify-between w-full max-w-5xl gap-3 sm:gap-6 md:gap-10 select-none">
                     <button onclick="updateStatus('played')" class="flex-1 bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-white text-base sm:text-2xl md:text-4xl font-bold py-3 sm:py-6 md:py-10 rounded-2xl sm:rounded-3xl shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center border border-emerald-400/30">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-12 sm:w-12 md:h-16 md:w-16 mb-1 sm:mb-3 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -87,7 +108,7 @@
         </main>
 
         <aside class="w-full sm:w-[35%] md:w-[30%] h-[45%] sm:h-full bg-slate-900 border-t sm:border-t-0 sm:border-l border-slate-700 flex flex-col shadow-2xl z-10 relative">
-            <div class="p-3 sm:p-6 border-b border-slate-700 bg-slate-800/80 flex justify-between items-center shadow-md z-10">
+            <div class="p-3 sm:p-6 border-b border-slate-700 bg-slate-800/80 flex justify-between items-center shadow-md z-10 select-none">
                 <h3 class="text-sm sm:text-lg md:text-xl font-bold text-blue-400 flex items-center gap-1.5 sm:gap-2 tracking-wide uppercase">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 sm:w-6 h-6">
                         <path d="M5.055 7.06c-1.25-.714-2.805.189-2.805 1.628v8.123c0 1.44 1.555 2.342 2.805 1.628L12 14.471v2.34c0 1.44 1.555 2.342 2.805 1.628l7.108-4.061c1.26-.72 1.26-2.536 0-3.256L14.805 7.06C13.555 6.346 12 7.249 12 8.688v2.34L5.055 7.06z" />
@@ -145,6 +166,101 @@
             }
         }
 
+        // ดึงการตั้งค่าเวลาทำการและค่าดีเลย์จากระบบหลังบ้านมาแสดง
+        async function fetchTimeSettings() {
+            try {
+                const response = await fetch(`${GAS_API_URL}?action=getTimeSettings`);
+                const data = await response.json();
+                document.getElementById('openTime').value = data.openTime || "12:30";
+                document.getElementById('closeTime').value = data.closeTime || "13:25";
+                document.getElementById('cooldown').value = data.cooldownMinutes || "2";
+            } catch (error) {
+                console.error("Error fetching settings:", error);
+            }
+        }
+
+        // ฟังก์ชันแปลงเลขที่พิมพ์เป็นฟอร์แมตเวลา 24 ชั่วโมงที่ถูกต้องเมื่อละสายตา (Blur)
+        function validateAndFormatTime(value) {
+            let digits = value.replace(/\D/g, ''); // ดึงเฉพาะตัวเลข
+            if (digits.length === 0) return '';
+            
+            let hour = 0;
+            let min = 0;
+            
+            if (digits.length === 3) {
+                // เคสพิมพ์ 3 หลัก เช่น 930 -> 09:30
+                hour = parseInt(digits.slice(0, 1), 10);
+                min = parseInt(digits.slice(1, 3), 10);
+            } else if (digits.length === 4) {
+                // เคสพิมพ์ 4 หลัก เช่น 1230 -> 12:30
+                hour = parseInt(digits.slice(0, 2), 10);
+                min = parseInt(digits.slice(2, 4), 10);
+            } else if (digits.length === 1 || digits.length === 2) {
+                // เคสพิมพ์ 1-2 หลัก เช่น 12 -> 12:00
+                hour = parseInt(digits, 10);
+                min = 0;
+            } else {
+                return null; // รูปแบบจำนวนตัวเลขไม่ถูกต้อง
+            }
+            
+            if (hour > 23 || min > 59) return null; // ตรวจสอบช่วงค่าเวลาจริง
+            
+            return hour.toString().padStart(2, '0') + ':' + min.toString().padStart(2, '0');
+        }
+
+        // เมื่อช่องกรอกเสียโฟกัส (ดีเจพิมพ์เสร็จแล้วกดคลิกที่อื่น) จะทำการจัดรูปแบบอัตโนมัติ
+        function handleTimeBlur(input) {
+            if (input.value.trim() === "") return;
+            let formatted = validateAndFormatTime(input.value);
+            if (formatted === null) {
+                alert("รูปแบบเวลาไม่ถูกต้อง กรุณากรอกใหม่ (เช่น 1230 หรือ 12:30) ครับ");
+                input.value = ""; // เคลียร์ช่องหากกรอกผิดพลาด
+                setTimeout(() => input.focus(), 10);
+            } else {
+                input.value = formatted;
+            }
+        }
+
+        // ส่งบันทึกเวลาทำการและค่าดีเลย์ไปที่ Apps Script
+        async function saveSettings() {
+            const openInput = document.getElementById('openTime');
+            const closeInput = document.getElementById('closeTime');
+            const cooldownInput = document.getElementById('cooldown');
+            
+            let openTime = validateAndFormatTime(openInput.value);
+            let closeTime = validateAndFormatTime(closeInput.value);
+            let cooldown = parseInt(cooldownInput.value, 10);
+            
+            if (!openTime || !closeTime) {
+                alert("กรุณากรอกช่วงเวลาเปิด-ปิดทำการให้ถูกต้อง (เช่น 1230 ถึง 1325)");
+                return;
+            }
+
+            if (isNaN(cooldown) || cooldown < 1 || cooldown > 60) {
+                alert("กรุณาระบุดีเลย์คิวเพลงให้อยู่ในช่วง 1 ถึง 60 นาทีครับ");
+                return;
+            }
+
+            openInput.value = openTime;
+            closeInput.value = closeTime;
+
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            try {
+                const response = await fetch(`${GAS_API_URL}?action=updateTimeSettings&openTime=${openTime}&closeTime=${closeTime}&cooldownMinutes=${cooldown}`);
+                const data = await response.json();
+                if (data.success) {
+                    alert("บันทึกการตั้งค่าเรียบร้อยแล้ว\n- เวลาทำการ: " + openTime + " - " + closeTime + " น.\n- ดีเลย์การพิมพ์รัว: " + cooldown + " นาที");
+                } else {
+                    alert("เกิดข้อผิดพลาดในการบันทึก");
+                }
+            } catch (error) {
+                alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
+                console.error(error);
+            } finally {
+                document.getElementById('loadingIndicator').classList.add('hidden');
+            }
+        }
+
         function renderUI() {
             const noQueueMessage = document.getElementById('noQueueMessage');
             const currentSongBox = document.getElementById('currentSongBox');
@@ -158,7 +274,7 @@
                 currentSongBox.classList.remove('flex');
                 
                 nextQueueContainer.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-gray-500 opacity-50 pb-10">
+                    <div class="flex flex-col items-center justify-center h-full text-gray-500 opacity-50 pb-10 select-none">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 sm:h-16 sm:w-16 mb-2 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                         </svg>
@@ -182,15 +298,15 @@
                         const div = document.createElement('div');
                         div.className = "bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 shadow-sm flex flex-col gap-0.5 sm:gap-1 relative overflow-hidden transition-all hover:bg-slate-700/50";
                         div.innerHTML = `
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
-                            <p class="text-white font-medium text-sm sm:text-lg leading-tight break-words pl-2 sm:pl-3">${item.song}</p>
-                            <p class="text-gray-400 text-xs sm:text-sm pl-2 sm:pl-3 mt-0.5">ขอโดย: <span class="text-blue-300 font-medium">${item.sender}</span></p>
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 select-none"></div>
+                            <p class="text-white font-medium text-sm sm:text-lg leading-tight break-words pl-2 sm:pl-3 select-text">${item.song}</p>
+                            <p class="text-gray-400 text-xs sm:text-sm pl-2 sm:pl-3 mt-0.5 select-text">ขอโดย: <span class="text-blue-300 font-medium">${item.sender}</span></p>
                         `;
                         nextQueueContainer.appendChild(div);
                     }
                 } else {
                     nextQueueContainer.innerHTML = `
-                        <div class="flex flex-col items-center justify-center h-full text-gray-500 opacity-50 pb-10">
+                        <div class="flex flex-col items-center justify-center h-full text-gray-500 opacity-50 pb-10 select-none">
                             <p class="text-sm sm:text-lg">ยังไม่มีคิวต่อไป</p>
                         </div>
                     `;
@@ -228,6 +344,7 @@
                 alert("กรุณานำ Web App URL ของ Google Apps Script มาใส่ในไฟล์โค้ดก่อนใช้งานครับ");
                 return;
             }
+            fetchTimeSettings(); // โหลดข้อมูลเวลาและดีเลย์เริ่มต้น
             fetchQueue();
             setInterval(fetchQueue, 3000);
         }
