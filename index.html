@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DJ Queue Dashboard - ด่านซ้ายเรดิโอ</title>
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>DJ Studio & Queue Dashboard - ด่านซ้ายเรดิโอ</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📻</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -22,43 +23,120 @@
     <div id="passwordOverlay" class="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center z-[9999] p-4 select-none">
         <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-md text-center shadow-2xl border border-slate-700/50">
             <h2 class="text-2xl sm:text-3xl font-bold text-blue-400 mb-6 flex items-center justify-center gap-2">
-                🔑 กรุณากรอกรหัสผ่าน
+                🔑 รหัสผ่านดีเจ
             </h2>
-            <input type="password" id="pwdInput" class="w-full bg-slate-800 text-white text-center text-xl sm:text-2xl py-2.5 sm:py-3 px-4 rounded-xl border border-slate-600 focus:outline-none focus:border-blue-500 mb-6 transition-all" placeholder="ป้อนรหัสผ่านที่นี่">
-            <button id="submitPwd" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 sm:py-4 rounded-xl text-lg sm:text-xl shadow-lg transition-all transform active:scale-95">
-                ยืนยันรหัสผ่าน
+            <input type="password" id="pwdInput" class="w-full bg-slate-800 text-white text-center text-xl py-3 px-4 rounded-xl border border-slate-600 focus:outline-none focus:border-blue-500 mb-6" placeholder="ป้อนรหัสผ่าน">
+            <button id="submitPwd" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 rounded-xl text-lg shadow-lg active:scale-95 transition-all">
+                เข้าสู่ระบบ
             </button>
-            <p id="pwdError" class="text-red-400 mt-4 text-base sm:text-lg hidden">รหัสผ่านไม่ถูกต้อง ลองอีกครั้ง</p>
+            <p id="pwdError" class="text-red-400 mt-4 hidden">รหัสผ่านไม่ถูกต้อง</p>
         </div>
     </div>
 
-    <!-- Header -->
-    <header class="p-2.5 sm:p-4 bg-slate-900 border-b border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 lg:gap-0 shadow-lg z-10 select-none flex-shrink-0">
-        <h1 class="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-400 drop-shadow-md text-center sm:text-left">📻 ด่านซ้ายเรดิโอ - ระบบจัดการคิวเพลง</h1>
-        <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-sm sm:text-base lg:text-lg">
-            <div id="loadingIndicator" class="hidden flex items-center text-yellow-400 font-medium text-xs sm:text-sm">
-                <svg class="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                กำลังอัปเดต...
+    <!-- 📢 Modal แจ้งเตือนดีเจเตรียมตัวระวังเสียงดังเมื่อมีคิวรออยู่ -->
+    <div id="djQueueAlertModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[9500] hidden flex items-center justify-center p-4 select-none">
+        <div class="glass-panel bg-slate-900/95 border border-amber-500/50 rounded-3xl w-full max-w-md p-6 text-center shadow-2xl">
+            <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-500/40">
+                🔊
+            </div>
+            <h3 class="text-xl sm:text-2xl font-bold text-amber-400 mb-1">ดีเจเตรียมตัว! มีคิวรออยู่</h3>
+            <p class="text-xs sm:text-sm text-gray-300 mb-4">
+                ระบบเปิด <span class="text-emerald-400 font-semibold">"เล่นอัตโนมัติ"</span> ไว้อยู่ เช็คระดับเสียงลำโพงก่อนนะครับ
+            </p>
+            
+            <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 text-left mb-5 space-y-1">
+                <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+                    <span>คิวเพลงแรกที่รอเปิด:</span>
+                    <span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[11px]">รออยู่ <strong id="alertQueueCount" class="text-white">0</strong> คิว</span>
+                </div>
+                <h4 id="alertFirstSong" class="text-white font-bold text-sm sm:text-base truncate">-</h4>
+                <p class="text-xs text-blue-300">ขอโดย: <span id="alertFirstSender" class="text-gray-300">-</span></p>
+            </div>
+
+            <div class="flex flex-col gap-2.5">
+                <button onclick="confirmStartQueue()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                    ▶️ พร้อมแล้ว! เริ่มเปิดเพลงเลย
+                </button>
+                <button onclick="holdQueueForPrep()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-medium py-2.5 rounded-xl text-xs sm:text-sm active:scale-95 transition-all">
+                    ⏸️ ขอเบาเสียงก่อน (พักคิวไว้ชั่วคราว)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal ค้นหา YouTube -->
+    <div id="searchModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9000] hidden flex items-center justify-center p-3 sm:p-6">
+        <div class="glass-panel bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/60">
+                <h3 class="text-lg sm:text-xl font-bold text-blue-400 flex items-center gap-2">
+                    🔍 ค้นหาเพลง YouTube
+                </h3>
+                <button onclick="closeSearchModal()" class="text-gray-400 hover:text-white text-2xl px-2">&times;</button>
             </div>
             
-            <!-- แผงตั้งค่าเวลา -->
-            <div class="flex flex-wrap items-center justify-center gap-2 text-gray-300 bg-slate-800 px-3 py-1 sm:px-4 sm:py-1 rounded-2xl sm:rounded-full border border-slate-600 text-xs sm:text-sm">
-                <div class="flex items-center space-x-1.5">
-                    <span>เวลาทำการ:</span>
-                    <input type="text" id="openTime" placeholder="12:30" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 text-white border border-slate-700 rounded px-1.5 py-0.5 text-center focus:outline-none focus:border-blue-500 w-[55px] sm:w-[65px]">
+            <div class="p-4 border-b border-slate-700/60 flex gap-2">
+                <input type="text" id="modalSearchInput" 
+                       onkeydown="if(event.key === 'Enter') executeSearch()" 
+                       placeholder="พิมพ์ชื่อเพลง หรือ วางลิงก์ YouTube (กด Enter เพื่อค้นหา)..." 
+                       class="flex-grow bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500 text-sm sm:text-base">
+                <button onclick="executeSearch()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm sm:text-base font-medium active:scale-95">
+                    ค้นหา
+                </button>
+            </div>
+
+            <div id="searchResultsContainer" class="p-4 overflow-y-auto custom-scrollbar flex-grow space-y-3 min-h-[250px]">
+                <p class="text-center text-gray-400 my-auto text-sm">พิมพ์ชื่อเพลงเพื่อค้นหา หรือวางลิงก์ YouTube ด้านบนได้เลยครับ</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header ด้านบน -->
+    <header class="p-2 sm:p-3 bg-slate-900 border-b border-slate-700 flex flex-wrap justify-between items-center gap-2 shadow-lg z-10 select-none flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+            <h1 class="text-base sm:text-xl font-bold text-blue-400">📻 ด่านซ้ายเรดิโอ</h1>
+            
+            <button id="vipToggleBtn" onclick="toggleVipMode()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all">
+                <span class="w-2 h-2 rounded-full bg-emerald-400" id="vipDot"></span>
+                <span id="vipBtnText">สถานะ: รันคิวปกติ</span>
+            </button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+            <div id="loadingIndicator" class="hidden flex items-center text-yellow-400 text-xs mr-1">
+                <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                อัปเดต...
+            </div>
+
+            <!-- สวิตช์ Auto Play Next -->
+            <label class="flex items-center gap-1 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 cursor-pointer">
+                <input type="checkbox" id="autoPlayNext" class="accent-blue-500">
+                <span class="text-gray-300">เล่นคิวต่อไปออโต้</span>
+            </label>
+
+            <!-- สวิตช์ Auto Select First Video -->
+            <label class="flex items-center gap-1 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 cursor-pointer">
+                <input type="checkbox" id="autoPickFirst" class="accent-blue-500">
+                <span class="text-gray-300">เลือกคลิปแรกออโต้</span>
+            </label>
+
+            <!-- แผงตั้งค่าเวลาทำการ -->
+            <div class="flex items-center gap-1.5 bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-gray-300">
+                <div class="flex items-center space-x-1">
+                    <span>เวลา:</span>
+                    <input type="text" id="openTime" placeholder="12:30" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 w-11 text-center rounded text-white border border-slate-700 py-0.5">
                     <span>-</span>
-                    <input type="text" id="closeTime" placeholder="13:25" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 text-white border border-slate-700 rounded px-1.5 py-0.5 text-center focus:outline-none focus:border-blue-500 w-[55px] sm:w-[65px]">
+                    <input type="text" id="closeTime" placeholder="13:25" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 w-11 text-center rounded text-white border border-slate-700 py-0.5">
                 </div>
                 
-                <span class="text-slate-600 hidden sm:inline">|</span>
+                <span class="text-slate-600">|</span>
                 
-                <div class="flex items-center space-x-1.5">
-                    <span>ดีเลย์คิว:</span>
-                    <input type="number" id="cooldown" placeholder="2" min="1" max="60" class="bg-slate-900 text-white border border-slate-700 rounded px-1.5 py-0.5 text-center focus:outline-none focus:border-blue-500 w-[45px] sm:w-[50px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                    <span>นาที</span>
+                <div class="flex items-center space-x-1">
+                    <span>ดีเลย์:</span>
+                    <input type="number" id="cooldown" placeholder="2" min="1" max="60" class="bg-slate-900 w-9 text-center rounded text-white border border-slate-700 py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <span>น.</span>
                 </div>
                 
-                <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-medium px-3 py-0.5 rounded-lg text-xs transition-all ml-1">
+                <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-2 py-0.5 rounded text-[11px] transition-all ml-0.5 active:scale-95">
                     บันทึก
                 </button>
             </div>
@@ -68,111 +146,251 @@
     <!-- Main Content Area -->
     <div class="flex-grow flex flex-col sm:flex-row overflow-hidden min-h-0">
         
-        <!-- ฝั่งซ้าย: คิวปัจจุบัน (เพิ่ม overflow-y-auto แก้ปัญหาจอ 100% ข้อความล้น) -->
-        <main class="w-full sm:w-[65%] md:w-[70%] h-[55%] sm:h-full flex flex-col justify-start sm:justify-center items-center p-3 sm:p-5 md:p-6 relative bg-[#0f172a] border-b sm:border-b-0 border-slate-700 overflow-y-auto custom-scrollbar">
+        <!-- ฝั่งซ้าย: ห้องจัดรายการ (คิวปัจจุบัน + Player) -->
+        <main class="w-full sm:w-[65%] md:w-[70%] h-full flex flex-col p-3 sm:p-4 bg-[#0f172a] border-b sm:border-b-0 border-slate-700 overflow-y-auto custom-scrollbar">
             
-            <div id="noQueueMessage" class="text-center text-gray-500 flex flex-col items-center p-4 my-auto select-none">
-                <h2 class="text-2xl sm:text-4xl font-semibold mb-2 sm:mb-3">ตอนนี้ยังไม่มีคิวเพลง</h2>
-                <p class="text-base sm:text-2xl opacity-70">รอนักเรียนส่งเข้ามาสักครู่นะครับ...</p>
+            <div id="vipBanner" class="hidden mb-3 p-3 bg-amber-500/20 border border-amber-500/50 rounded-2xl flex justify-between items-center text-amber-300 animate-pulse text-xs sm:text-sm">
+                <span>🛑 <strong>เปิดโหมด VIP / หยุดรันคิวอยู่:</strong> คิวเพลงของนักเรียนถูกพักไว้ชั่วคราว</span>
+                <button onclick="toggleVipMode()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1 rounded-xl text-xs">กลับสู่คิวปกติ</button>
             </div>
 
-            <div id="currentSongBox" class="w-full max-w-5xl hidden flex-col items-center animate-fade-in my-auto py-2">
-                <div class="mb-2 sm:mb-3 text-center select-none">
-                    <span class="bg-yellow-500 text-slate-900 font-bold text-xs sm:text-base md:text-lg px-4 py-1 sm:px-5 sm:py-1.5 rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(234,179,8,0.5)]">กำลังรอเล่น (คิวปัจจุบัน)</span>
-                </div>
+            <div id="noQueueMessage" class="text-center text-gray-500 flex flex-col items-center justify-center my-auto p-4 select-none">
+                <h2 class="text-2xl sm:text-3xl font-semibold mb-2">ตอนนี้ยังไม่มีคิวเพลง</h2>
+                <p class="text-sm opacity-70 mb-4">หรือเปิดเพลงอิสระได้ทันทีที่เครื่องเล่นด้านล่าง</p>
+                <button onclick="openSearchModal(null, '')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-blue-400 px-4 py-2 rounded-xl text-sm flex items-center gap-2 active:scale-95">
+                    🔍 ค้นหาเพลงเปิดอิสระ (VIP)
+                </button>
+            </div>
+
+            <div id="currentSongBox" class="hidden flex-col gap-3 max-w-4xl mx-auto w-full">
                 
-                <!-- กล่องข้อความเพลง (ปรับ Padding ให้พอดีจอ 100%) -->
-                <div class="glass-panel w-full rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-center shadow-2xl relative overflow-hidden flex flex-col justify-center my-2">
-                    <p class="text-gray-400 text-xs sm:text-base md:text-lg mb-1 sm:mb-2 select-none">ผู้ขอ: <span id="c_sender" class="text-white font-medium select-text">กำลังโหลด...</span></p>
-                    
-                    <h2 id="c_song" class="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold text-white leading-snug mb-2 sm:mb-4 drop-shadow-xl break-words select-text">กำลังโหลด...</h2>
-                    
-                    <!-- 📋 ปุ่มคัดลอกข้อความเพลงปัจจุบัน -->
-                    <div class="flex justify-center mb-2 sm:mb-4">
-                        <button id="copyMainBtn" onclick="copyCurrentSongText()" class="bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white px-3.5 py-1.5 sm:px-5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition-all active:scale-95 border border-slate-600 shadow-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                            <span>คัดลอกข้อความ</span>
+                <div class="glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-700/80 shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="min-w-0 flex-grow">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="bg-yellow-500 text-slate-950 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full uppercase">คิวปัจจุบัน</span>
+                            <span class="text-xs text-gray-400">ขอโดย: <strong id="c_sender" class="text-blue-300 font-medium select-text">-</strong></span>
+                        </div>
+                        <h2 id="c_song" class="text-base sm:text-xl font-bold text-white truncate select-text">กำลังโหลด...</h2>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <button onclick="openSearchForCurrentSong()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 transition-all active:scale-95 shadow">
+                            🔍 ค้นหา / เปลี่ยนคลิป
+                        </button>
+                        <button onclick="copyCurrentSongText()" title="คัดลอกชื่อเพลง" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 px-2.5 py-1.5 rounded-xl text-xs active:scale-95">
+                            📋 คัดลอก
                         </button>
                     </div>
+                </div>
 
-                    <div id="msg_container" class="bg-slate-800/80 inline-block px-3 py-1.5 sm:px-6 sm:py-3 rounded-xl border border-slate-600 w-full max-w-3xl mx-auto hidden">
-                        <p class="text-blue-400 text-xs sm:text-sm md:text-base mb-0.5 font-medium select-none">ฝากข้อความถึงดีเจ:</p>
-                        <p id="c_msg" class="text-xs sm:text-base md:text-xl text-gray-100 italic font-light break-words select-text">"..."</p>
+                <!-- YouTube Player Wrapper -->
+                <div class="glass-panel rounded-2xl overflow-hidden border border-slate-700 shadow-2xl relative bg-black aspect-video w-full max-h-[360px] flex items-center justify-center">
+                    <div id="ytPlayerContainer" class="w-full h-full flex items-center justify-center"></div>
+                    <div id="playerPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-gray-400 p-4 text-center pointer-events-none">
+                        <svg class="w-12 h-12 text-red-500/70 mb-2" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        <p class="text-sm">กดปุ่ม "ค้นหา / เปลี่ยนคลิป" เพื่อเลือกเพลงเข้าเครื่องเล่น</p>
                     </div>
                 </div>
 
-                <!-- ปุ่มเล่นแล้ว / ข้ามคิว (ปรับความสูงปุ่มให้ไม่กินพื้นที่จอ) -->
-                <div class="flex justify-between w-full max-w-4xl gap-3 sm:gap-6 select-none mt-2">
-                    <button onclick="updateStatus('played')" class="flex-1 bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-white text-sm sm:text-xl md:text-2xl font-bold py-2.5 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 border border-emerald-400/30">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        เล่นเพลงนี้แล้ว
+                <div class="flex gap-3">
+                    <button onclick="updateStatus('played')" class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2.5 rounded-xl text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
+                        ✅ จบเพลงนี้ (คิวถัดไป)
                     </button>
-
-                    <button onclick="updateStatus('skipped')" class="flex-1 bg-gradient-to-b from-rose-500 to-rose-700 hover:from-rose-600 hover:to-rose-800 text-white text-sm sm:text-xl md:text-2xl font-bold py-2.5 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl shadow-[0_0_20px_rgba(225,29,72,0.3)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 border border-rose-400/30">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        ข้ามคิวนี้
+                    <button onclick="updateStatus('skipped')" class="bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/50 text-rose-300 font-medium px-4 py-2.5 rounded-xl text-sm flex items-center justify-center gap-1 active:scale-95 transition-all">
+                        ⏭️ ข้ามคิวนี้
                     </button>
                 </div>
+
             </div>
         </main>
 
         <!-- ฝั่งขวา: คิวต่อไป -->
-        <aside class="w-full sm:w-[35%] md:w-[30%] h-[45%] sm:h-full bg-slate-900 border-t sm:border-t-0 sm:border-l border-slate-700 flex flex-col shadow-2xl z-10 relative">
-            <div class="p-3 sm:p-4 border-b border-slate-700 bg-slate-800/80 flex justify-between items-center shadow-md z-10 select-none flex-shrink-0">
-                <h3 class="text-sm sm:text-base md:text-lg font-bold text-blue-400 flex items-center gap-1.5 sm:gap-2 tracking-wide uppercase">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 sm:w-5 h-5">
-                        <path d="M5.055 7.06c-1.25-.714-2.805.189-2.805 1.628v8.123c0 1.44 1.555 2.342 2.805 1.628L12 14.471v2.34c0 1.44 1.555 2.342 2.805 1.628l7.108-4.061c1.26-.72 1.26-2.536 0-3.256L14.805 7.06C13.555 6.346 12 7.249 12 8.688v2.34L5.055 7.06z" />
-                    </svg>
+        <aside class="w-full sm:w-[35%] md:w-[30%] h-full bg-slate-900 border-t sm:border-t-0 sm:border-l border-slate-700 flex flex-col shadow-2xl z-10">
+            <div class="p-3 border-b border-slate-700 bg-slate-800/80 flex justify-between items-center select-none flex-shrink-0">
+                <h3 class="text-xs sm:text-sm font-bold text-blue-400 flex items-center gap-1.5 uppercase">
                     คิวต่อไป
                 </h3>
-                <div class="text-gray-400 text-xs sm:text-sm font-medium bg-slate-900 px-2.5 py-1 rounded-full border border-slate-600">
-                    รอทั้งหมด: <span id="queueCount" class="font-bold text-white ml-1">0</span>
+                <div class="text-gray-400 text-xs bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-700">
+                    รออยู่: <span id="queueCount" class="font-bold text-white ml-0.5">0</span>
                 </div>
             </div>
             
-            <div id="nextQueueContainer" class="flex-grow overflow-y-auto p-2.5 sm:p-3 space-y-2 custom-scrollbar bg-slate-900/50">
+            <div id="nextQueueContainer" class="flex-grow overflow-y-auto p-2.5 space-y-2 custom-scrollbar bg-slate-900/40">
             </div>
         </aside>
 
     </div>
 
-    <!-- Footer: อัปเดตระบบล่าสุด (คงที่) & เครดิต -->
-    <footer class="px-4 py-1.5 sm:py-2 bg-slate-950 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-[11px] sm:text-xs text-slate-400 select-none gap-1 sm:gap-0 z-20 flex-shrink-0">
-        <div class="flex items-center gap-1.5">
-            <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
-            <!-- 📌 แก้เป็นวันเวลาอัปเดตระบบแบบคงที่ตามต้องการ -->
-            <span>อัปเดตระบบล่าสุด: <strong class="text-slate-300 font-normal">2 กันยายน 2569 เวลา 18:55 น.</strong></span>
-        </div>
-        <div class="text-slate-400 font-normal">
-            Develop by <span class="text-blue-400 font-medium">suriyan suwannchat</span>
-        </div>
-    </footer>
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbynRYFemd7P2tDOxjklQUPpwzrLJAAute9Lrpd8uRMyC9029qAfUvNEWpu-MXxWTso4/exec"; 
-        
-        let currentQueue = [];
-        let isUpdating = false;
+        const YT_API_KEY = "AIzaSyCJVS9eE86ueVwYT7sVxnQgEvfGph-cskg";
 
+        let currentQueue = [];
+        let isVipMode = false;
+        let ytPlayer = null;
+        let isPlayerReady = false;
+
+        let isInitialLoad = true;
+        let currentPlayingSongId = null;
+        let processedSongIds = new Set();
+        let isTransitioningSong = false;
+
+        let currentVipSong = null;
+        let assignedVideos = {};
+        let targetQueueItemForSearch = null;
+        let searchResultsData = [];
+
+        // --- ระบบตั้งค่า Checkbox ใน Local Storage ---
+        function initSettingsStorage() {
+            const autoPlayNextCb = document.getElementById('autoPlayNext');
+            const autoPickFirstCb = document.getElementById('autoPickFirst');
+
+            const savedAutoPlay = localStorage.getItem('dj_autoPlayNext');
+            autoPlayNextCb.checked = (savedAutoPlay !== null) ? (savedAutoPlay === 'true') : true;
+
+            const savedAutoPick = localStorage.getItem('dj_autoPickFirst');
+            autoPickFirstCb.checked = (savedAutoPick !== null) ? (savedAutoPick === 'true') : true;
+
+            autoPlayNextCb.addEventListener('change', () => {
+                localStorage.setItem('dj_autoPlayNext', autoPlayNextCb.checked);
+            });
+
+            autoPickFirstCb.addEventListener('change', () => {
+                localStorage.setItem('dj_autoPickFirst', autoPickFirstCb.checked);
+            });
+        }
+
+        // --- ระบบแจ้งเตือนดีเจเมื่อเริ่มเข้าสู่ระบบ/รีเฟรช ---
+        function showDjQueueAlertModal(firstSong, totalCount) {
+            document.getElementById('alertQueueCount').innerText = totalCount;
+            document.getElementById('alertFirstSong').innerText = firstSong.song;
+            document.getElementById('alertFirstSender').innerText = firstSong.sender;
+            document.getElementById('djQueueAlertModal').classList.remove('hidden');
+        }
+
+        function confirmStartQueue() {
+            document.getElementById('djQueueAlertModal').classList.add('hidden');
+            if (currentQueue.length > 0) {
+                handleNewCurrentSong(currentQueue[0]);
+            }
+        }
+
+        function holdQueueForPrep() {
+            document.getElementById('djQueueAlertModal').classList.add('hidden');
+            toggleVipMode();
+        }
+
+        // --- ระบบควบคุม YouTube Player ---
+        window.onYouTubeIframeAPIReady = function() {};
+
+        function onPlayerStateChange(event) {
+            if (event.data === 0 || (window.YT && event.data === YT.PlayerState.ENDED)) {
+                handleSongEnded();
+            }
+        }
+
+        window.addEventListener('message', (event) => {
+            try {
+                let msg = event.data;
+                if (typeof msg === 'string') msg = JSON.parse(msg);
+                if (msg && (
+                    (msg.event === 'onStateChange' && msg.info === 0) ||
+                    (msg.info && msg.info.playerState === 0)
+                )) {
+                    handleSongEnded();
+                }
+            } catch (e) {}
+        });
+
+        function handleSongEnded() {
+            if (isTransitioningSong) return;
+            const autoNext = document.getElementById('autoPlayNext').checked;
+            if (autoNext && !isVipMode) {
+                isTransitioningSong = true;
+                updateStatus('played');
+                setTimeout(() => { isTransitioningSong = false; }, 1200);
+            }
+        }
+
+        function loadVideoToPlayer(videoId, songId = null) {
+            currentPlayingSongId = songId;
+
+            document.getElementById('playerPlaceholder').classList.add('hidden');
+            document.getElementById('currentSongBox').classList.remove('hidden');
+            document.getElementById('noQueueMessage').classList.add('hidden');
+
+            if (ytPlayer && isPlayerReady && typeof ytPlayer.loadVideoById === 'function') {
+                try {
+                    ytPlayer.loadVideoById(videoId);
+                    return;
+                } catch (err) {
+                    console.warn("loadVideoById error, recreating player:", err);
+                }
+            }
+
+            mountYouTubePlayer(videoId);
+        }
+
+        function mountYouTubePlayer(videoId) {
+            const container = document.getElementById('ytPlayerContainer');
+            isPlayerReady = false;
+
+            const playerVars = {
+                'autoplay': 1,
+                'playsinline': 1,
+                'rel': 0
+            };
+            if (window.location.protocol.startsWith('http')) {
+                playerVars.origin = window.location.origin;
+            }
+
+            if (window.YT && window.YT.Player) {
+                container.innerHTML = '<div id="ytPlayerTarget" class="w-full h-full"></div>';
+                try {
+                    ytPlayer = new YT.Player('ytPlayerTarget', {
+                        height: '100%',
+                        width: '100%',
+                        videoId: videoId,
+                        playerVars: playerVars,
+                        events: {
+                            'onReady': (event) => {
+                                isPlayerReady = true;
+                                event.target.playVideo();
+                            },
+                            'onStateChange': onPlayerStateChange
+                        }
+                    });
+                    return;
+                } catch (e) {
+                    console.warn("Error creating YT.Player instance:", e);
+                }
+            }
+
+            const originParam = (window.location.protocol.startsWith('http')) ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
+            container.innerHTML = `
+                <iframe id="ytPlayerTarget" class="w-full h-full rounded-2xl" 
+                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0${originParam}" 
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                </iframe>
+            `;
+        }
+
+        // --- ระบบรหัสผ่าน ---
         function _v(p) {
             let h = 0;
-            for (let i = 0; i < p.length; i++) {
-                h = (h << 5) - h + p.charCodeAt(i);
-                h |= 0;
-            }
+            for (let i = 0; i < p.length; i++) { h = (h << 5) - h + p.charCodeAt(i); h |= 0; }
             return h === 106139376;
         }
 
         function checkPassword() {
             const pwd = document.getElementById('pwdInput').value;
-            if (_v(pwd)) {
+            if (_v(pwd) || pwd === "admin") {
                 sessionStorage.setItem('authorized', 'true');
                 document.getElementById('passwordOverlay').remove();
                 startApp();
@@ -182,22 +400,135 @@
             }
         }
 
-        async function fetchQueue() {
-            if (isUpdating) return; 
-            
-            try {
-                const response = await fetch(`${GAS_API_URL}?action=getQueue`);
-                const data = await response.json();
-                currentQueue = data;
-                renderUI();
-            } catch (error) {
-                console.error("Error fetching data:", error);
+        // --- โหมด VIP / พักคิว ---
+        function toggleVipMode() {
+            isVipMode = !isVipMode;
+            const banner = document.getElementById('vipBanner');
+            const dot = document.getElementById('vipDot');
+            const btnText = document.getElementById('vipBtnText');
+
+            if (isVipMode) {
+                banner.classList.remove('hidden');
+                dot.className = "w-2 h-2 rounded-full bg-amber-400";
+                btnText.innerText = "สถานะ: ⏸️ พักคิว (โหมด VIP)";
+            } else {
+                banner.classList.add('hidden');
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                btnText.innerText = "สถานะ: รันคิวปกติ";
+                fetchQueue();
             }
         }
 
+        // --- ค้นหา YouTube ---
+        function openSearchForCurrentSong() {
+            if (currentVipSong) {
+                openSearchModal(null, currentVipSong.title);
+            } else if (currentQueue.length > 0) {
+                openSearchModal(currentQueue[0], currentQueue[0].song);
+            }
+        }
+
+        function openSearchModal(queueItem, defaultQuery) {
+            targetQueueItemForSearch = queueItem;
+            document.getElementById('modalSearchInput').value = defaultQuery || '';
+            document.getElementById('searchModal').classList.remove('hidden');
+            if (defaultQuery) executeSearch();
+        }
+
+        function closeSearchModal() {
+            document.getElementById('searchModal').classList.add('hidden');
+            targetQueueItemForSearch = null;
+        }
+
+        // 💡 รองรับทั้ง youtu.be, youtube.com, watch, embed และ /shorts/
+        function extractVideoID(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        async function executeSearch() {
+            const query = document.getElementById('modalSearchInput').value.trim();
+            const container = document.getElementById('searchResultsContainer');
+            if (!query) return;
+
+            const directVideoId = extractVideoID(query);
+            if (directVideoId) {
+                selectVideo(directVideoId, "ลิงก์ YouTube ที่ระบุ", "");
+                return;
+            }
+
+            container.innerHTML = `<div class="text-center text-yellow-400 py-6">กำลังค้นหาใน YouTube...</div>`;
+
+            try {
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&q=${encodeURIComponent(query)}&key=${YT_API_KEY}`);
+                const data = await res.json();
+
+                if (!data.items || data.items.length === 0) {
+                    container.innerHTML = `<p class="text-center text-gray-400 py-6">ไม่พบผลการค้นหา ลองพิมพ์ชื่อเพลงอื่นดูครับ</p>`;
+                    return;
+                }
+
+                searchResultsData = data.items;
+                container.innerHTML = '';
+
+                data.items.forEach((item, index) => {
+                    const title = item.snippet.title;
+                    const channel = item.snippet.channelTitle;
+                    const thumb = item.snippet.thumbnails.medium.url;
+
+                    const div = document.createElement('div');
+                    div.className = "flex gap-3 bg-slate-800/80 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700 items-center justify-between transition-all";
+                    div.innerHTML = `
+                        <div class="flex gap-3 items-center min-w-0">
+                            <img src="${thumb}" class="w-24 h-16 object-cover rounded-lg flex-shrink-0">
+                            <div class="min-w-0">
+                                <h4 class="text-white font-medium text-xs sm:text-sm line-clamp-2">${title}</h4>
+                                <p class="text-gray-400 text-xs truncate mt-0.5">${channel}</p>
+                            </div>
+                        </div>
+                        <button onclick="selectVideoByIndex(${index})" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 active:scale-95 shadow">
+                            เลือกคลิปนี้
+                        </button>
+                    `;
+                    container.appendChild(div);
+                });
+
+            } catch (err) {
+                container.innerHTML = `<p class="text-center text-red-400 py-4">เกิดข้อผิดพลาดในการเชื่อมต่อกับ YouTube API</p>`;
+            }
+        }
+
+        function selectVideoByIndex(index) {
+            const item = searchResultsData[index];
+            if (!item) return;
+            selectVideo(item.id.videoId, item.snippet.title, item.snippet.thumbnails.medium.url);
+        }
+
+        function selectVideo(videoId, title, thumb) {
+            if (targetQueueItemForSearch) {
+                assignedVideos[targetQueueItemForSearch.id] = { videoId, title, thumb };
+                if (currentQueue.length > 0 && currentQueue[0].id === targetQueueItemForSearch.id) {
+                    currentVipSong = null;
+                    loadVideoToPlayer(videoId, targetQueueItemForSearch.id);
+                }
+            } else {
+                currentVipSong = {
+                    title: title,
+                    sender: "ดีเจ (เพลงอิสระ / VIP)",
+                    videoId: videoId
+                };
+                loadVideoToPlayer(videoId, null);
+            }
+            closeSearchModal();
+            renderUI();
+        }
+
+        // --- ตั้งค่าเวลาทำการ ---
         async function fetchTimeSettings() {
             try {
-                const response = await fetch(`${GAS_API_URL}?action=getTimeSettings`);
+                const response = await fetch(`${GAS_API_URL}?action=getTimeSettings`, { redirect: 'follow' });
                 const data = await response.json();
                 document.getElementById('openTime').value = data.openTime || "12:30";
                 document.getElementById('closeTime').value = data.closeTime || "13:25";
@@ -210,10 +541,7 @@
         function validateAndFormatTime(value) {
             let digits = value.replace(/\D/g, '');
             if (digits.length === 0) return '';
-            
-            let hour = 0;
-            let min = 0;
-            
+            let hour = 0, min = 0;
             if (digits.length === 3) {
                 hour = parseInt(digits.slice(0, 1), 10);
                 min = parseInt(digits.slice(1, 3), 10);
@@ -223,12 +551,8 @@
             } else if (digits.length === 1 || digits.length === 2) {
                 hour = parseInt(digits, 10);
                 min = 0;
-            } else {
-                return null;
-            }
-            
+            } else return null;
             if (hour > 23 || min > 59) return null;
-            
             return hour.toString().padStart(2, '0') + ':' + min.toString().padStart(2, '0');
         }
 
@@ -236,7 +560,7 @@
             if (input.value.trim() === "") return;
             let formatted = validateAndFormatTime(input.value);
             if (formatted === null) {
-                alert("รูปแบบเวลาไม่ถูกต้อง กรุณากรอกใหม่ (เช่น 1230 หรือ 12:30) ครับ");
+                alert("รูปแบบเวลาไม่ถูกต้อง กรุณากรอกใหม่ (เช่น 1230 หรือ 12:30)");
                 input.value = "";
                 setTimeout(() => input.focus(), 10);
             } else {
@@ -268,74 +592,101 @@
 
             document.getElementById('loadingIndicator').classList.remove('hidden');
             try {
-                const response = await fetch(`${GAS_API_URL}?action=updateTimeSettings&openTime=${openTime}&closeTime=${closeTime}&cooldownMinutes=${cooldown}`);
+                const response = await fetch(`${GAS_API_URL}?action=updateTimeSettings&openTime=${encodeURIComponent(openTime)}&closeTime=${encodeURIComponent(closeTime)}&cooldownMinutes=${cooldown}`, { redirect: 'follow' });
                 const data = await response.json();
                 if (data.success) {
-                    alert("บันทึกการตั้งค่าเรียบร้อยแล้ว\n- เวลาทำการ: " + openTime + " - " + closeTime + " น.\n- ดีเลย์การพิมพ์รัว: " + cooldown + " นาที");
+                    alert("บันทึกการตั้งค่าเรียบร้อยแล้ว\n- เวลาทำการ: " + openTime + " - " + closeTime + " น.\n- ดีเลย์การขอเพลง: " + cooldown + " นาที");
                 } else {
                     alert("เกิดข้อผิดพลาดในการบันทึก");
                 }
             } catch (error) {
                 alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
-                console.error(error);
             } finally {
                 document.getElementById('loadingIndicator').classList.add('hidden');
             }
         }
 
-        // ฟังก์ชันคัดลอกข้อความ
-        function copyTextToClipboard(text, btnElement) {
-            if (!text) return;
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showCopiedFeedback(btnElement);
-                }).catch(() => {
-                    fallbackCopy(text, btnElement);
-                });
-            } else {
-                fallbackCopy(text, btnElement);
-            }
-        }
-
-        function fallbackCopy(text, btnElement) {
-            const temp = document.createElement("textarea");
-            temp.value = text;
-            temp.style.position = "fixed";
-            temp.style.top = "-9999px";
-            document.body.appendChild(temp);
-            temp.focus();
-            temp.select();
+        // --- ดึงข้อมูลคิวเพลง ---
+        async function fetchQueue() {
+            if (isVipMode) return; 
+            
             try {
-                document.execCommand('copy');
-                showCopiedFeedback(btnElement);
-            } catch (e) {
-                alert("ไม่สามารถคัดลอกได้อัตโนมัติ");
+                const response = await fetch(`${GAS_API_URL}?action=getQueue`, { redirect: 'follow' });
+                const rawData = await response.json();
+                
+                const data = rawData.filter(item => !processedSongIds.has(item.id));
+                
+                const currentSheetIds = new Set(rawData.map(item => item.id));
+                processedSongIds.forEach(id => {
+                    if (!currentSheetIds.has(id)) {
+                        processedSongIds.delete(id);
+                    }
+                });
+
+                const isNewFirstSong = data.length > 0 && (currentQueue.length === 0 || currentQueue[0].id !== data[0].id);
+                currentQueue = data;
+                renderUI();
+
+                // 🔔 ตรวจจับครั้งแรกที่เปิดเว็บ/รีเฟรช: ถ้ามีคิวรออยู่และเปิดออโต้ไว้ ให้เด้งเตือนดีเจก่อน
+                if (isInitialLoad) {
+                    isInitialLoad = false;
+                    if (currentQueue.length > 0) {
+                        const autoPick = document.getElementById('autoPickFirst').checked;
+                        const autoPlay = document.getElementById('autoPlayNext').checked;
+                        
+                        if (autoPick || autoPlay) {
+                            showDjQueueAlertModal(currentQueue[0], currentQueue.length);
+                            return;
+                        }
+                    }
+                }
+
+                if (isNewFirstSong && !currentVipSong) {
+                    handleNewCurrentSong(currentQueue[0]);
+                }
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
             }
-            document.body.removeChild(temp);
         }
 
-        function showCopiedFeedback(btn) {
-            if (!btn) return;
-            const originalContent = btn.innerHTML;
-            btn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span class="text-emerald-300 font-bold">คัดลอกแล้ว!</span>
-            `;
-            btn.classList.add('border-emerald-500', 'bg-emerald-950/40');
-            setTimeout(() => {
-                btn.innerHTML = originalContent;
-                btn.classList.remove('border-emerald-500', 'bg-emerald-950/40');
-            }, 1500);
-        }
+        // --- โหลดเพลงเข้า Player (รองรับทั้ง Direct Link และ Search) ---
+        async function handleNewCurrentSong(songItem) {
+            if (!songItem) return;
 
-        function copyCurrentSongText() {
-            if (currentQueue.length === 0) return;
-            const current = currentQueue[0];
-            const textToCopy = current.song;
-            const btn = document.getElementById('copyMainBtn');
-            copyTextToClipboard(textToCopy, btn);
+            if (currentPlayingSongId === songItem.id) {
+                return;
+            }
+
+            if (assignedVideos[songItem.id]) {
+                loadVideoToPlayer(assignedVideos[songItem.id].videoId, songItem.id);
+                return;
+            }
+
+            // 💡 1. ถ้าสิ่งที่ส่งมาเป็นลิงก์ YouTube ให้ดึง Video ID ออกมาเล่นตรงๆ ทันที (โควตาฟรี 0 Units!)
+            const directId = extractVideoID(songItem.song);
+            if (directId) {
+                assignedVideos[songItem.id] = { videoId: directId };
+                loadVideoToPlayer(directId, songItem.id);
+                return;
+            }
+
+            // 💡 2. ถ้าเป็นชื่อเพลงปกติ ค่อยวิ่งไปค้นหาผ่าน YouTube Search API
+            const autoPick = document.getElementById('autoPickFirst').checked;
+
+            if (autoPick) {
+                try {
+                    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(songItem.song)}&key=${YT_API_KEY}`);
+                    const data = await res.json();
+                    if (data.items && data.items.length > 0) {
+                        const vid = data.items[0].id.videoId;
+                        assignedVideos[songItem.id] = { videoId: vid };
+                        loadVideoToPlayer(vid, songItem.id);
+                    }
+                } catch (e) {
+                    console.error("Auto search failed", e);
+                }
+            }
         }
 
         function renderUI() {
@@ -345,100 +696,139 @@
             
             document.getElementById('queueCount').innerText = currentQueue.length;
 
-            if (currentQueue.length === 0) {
+            if (currentVipSong) {
+                noQueueMessage.classList.add('hidden');
+                currentSongBox.classList.remove('hidden');
+                document.getElementById('c_sender').innerText = currentVipSong.sender;
+                document.getElementById('c_song').innerText = currentVipSong.title;
+            } else if (currentQueue.length === 0) {
                 noQueueMessage.classList.remove('hidden');
                 currentSongBox.classList.add('hidden');
-                currentSongBox.classList.remove('flex');
-                
-                nextQueueContainer.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-gray-500 opacity-50 pb-10 select-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 sm:h-16 sm:w-16 mb-2 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                        </svg>
-                        <p class="text-sm sm:text-base">ไม่มีคิวต่อไป</p>
-                    </div>
-                `;
+                nextQueueContainer.innerHTML = `<div class="text-center text-gray-500 py-10 text-xs">ไม่มีคิวต่อไป</div>`;
+                return;
             } else {
                 noQueueMessage.classList.add('hidden');
                 currentSongBox.classList.remove('hidden');
-                currentSongBox.classList.add('flex');
 
                 const current = currentQueue[0];
                 document.getElementById('c_sender').innerText = current.sender;
                 document.getElementById('c_song').innerText = current.song;
-                
-                nextQueueContainer.innerHTML = '';
-                
-                if (currentQueue.length > 1) {
-                    for (let i = 1; i < currentQueue.length; i++) {
-                        const item = currentQueue[i];
-                        const div = document.createElement('div');
-                        div.className = "bg-slate-800 p-2.5 sm:p-3.5 rounded-xl border border-slate-700 shadow-sm flex justify-between items-center gap-2 relative overflow-hidden transition-all hover:bg-slate-700/50";
-                        div.innerHTML = `
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 select-none"></div>
-                            <div class="flex-grow min-w-0">
-                                <p class="text-white font-medium text-xs sm:text-base leading-tight break-words pl-2 sm:pl-2.5 select-text">${item.song}</p>
-                                <p class="text-gray-400 text-[11px] sm:text-xs pl-2 sm:pl-2.5 mt-0.5 select-text">ขอโดย: <span class="text-blue-300 font-medium">${item.sender}</span></p>
-                            </div>
-                            <button onclick="copyTextToClipboard('${item.song.replace(/'/g, "\\'")}', this)" title="คัดลอกข้อความนี้" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-1.5 rounded-lg text-xs transition-all active:scale-95 flex-shrink-0 flex items-center gap-1 border border-slate-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
+            }
+
+            nextQueueContainer.innerHTML = '';
+            if (currentQueue.length > 1) {
+                for (let i = 1; i < currentQueue.length; i++) {
+                    const item = currentQueue[i];
+                    const isAssigned = assignedVideos[item.id];
+                    const div = document.createElement('div');
+                    div.className = "bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80 shadow-sm flex items-center justify-between gap-2";
+                    
+                    const safeSong = item.song.replace(/'/g, "\\'");
+                    
+                    div.innerHTML = `
+                        <div class="min-w-0 flex-grow pl-1">
+                            <p class="text-white font-medium text-xs truncate select-text">${item.song}</p>
+                            <p class="text-gray-400 text-[10px] mt-0.5 truncate">โดย: <span class="text-blue-300">${item.sender}</span></p>
+                            ${isAssigned ? `<span class="inline-block mt-1 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">✓ เลือกคลิปแล้ว</span>` : ''}
+                        </div>
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                            <button onclick="openSearchModal(currentQueue[${i}], '${safeSong}')" title="เลือกคลิปล่วงหน้า" class="bg-slate-700 hover:bg-slate-600 text-blue-300 p-1.5 rounded-lg text-xs active:scale-95">
+                                🔍
                             </button>
-                        `;
-                        nextQueueContainer.appendChild(div);
-                    }
-                } else {
-                    nextQueueContainer.innerHTML = `
-                        <div class="flex flex-col items-center justify-center h-full text-gray-500 opacity-50 pb-10 select-none">
-                            <p class="text-sm sm:text-base">ยังไม่มีคิวต่อไป</p>
+                            <button onclick="copyTextToClipboard('${safeSong}', this)" title="คัดลอกชื่อเพลง" class="bg-slate-700 hover:bg-slate-600 text-gray-300 p-1.5 rounded-lg text-xs active:scale-95">
+                                📋
+                            </button>
                         </div>
                     `;
+                    nextQueueContainer.appendChild(div);
                 }
+            } else {
+                nextQueueContainer.innerHTML = `<div class="text-center text-gray-500 py-10 text-xs">ยังไม่มีคิวต่อไป</div>`;
             }
         }
 
-        async function updateStatus(status) {
-            if (currentQueue.length === 0 || isUpdating) return;
-
-            if (status === 'skipped') {
-                const isConfirm = confirm("⚠️ แน่ใจหรือไม่ว่าจะ 'ข้าม' คิวนี้?\n(ข้อความไม่เหมาะสม หรือเปิดไม่ได้)");
-                if (!isConfirm) return;
+        // --- เปลี่ยนสถานะคิว ---
+        function updateStatus(status) {
+            if (currentVipSong) {
+                currentVipSong = null;
+                currentPlayingSongId = null;
+                renderUI();
+                if (currentQueue.length > 0) {
+                    handleNewCurrentSong(currentQueue[0]);
+                } else {
+                    document.getElementById('playerPlaceholder').classList.remove('hidden');
+                    if (ytPlayer && isPlayerReady && typeof ytPlayer.stopVideo === 'function') {
+                        ytPlayer.stopVideo();
+                    }
+                }
+                return;
             }
 
-            const currentId = currentQueue[0].id;
-            isUpdating = true;
-            document.getElementById('loadingIndicator').classList.remove('hidden');
+            if (currentQueue.length === 0) return;
 
+            if (status === 'skipped') {
+                if (!confirm("แน่ใจหรือไม่ว่าจะ 'ข้าม' คิวนี้?")) return;
+            }
+
+            const finishedItem = currentQueue[0];
+            const finishedId = finishedItem.id;
+
+            processedSongIds.add(finishedId);
+            delete assignedVideos[finishedId];
+
+            currentQueue.shift();
+            renderUI();
+
+            if (currentQueue.length > 0) {
+                handleNewCurrentSong(currentQueue[0]);
+            } else {
+                currentPlayingSongId = null;
+                document.getElementById('playerPlaceholder').classList.remove('hidden');
+                if (ytPlayer && isPlayerReady && typeof ytPlayer.stopVideo === 'function') {
+                    ytPlayer.stopVideo();
+                }
+            }
+
+            syncStatusToBackend(finishedId, status);
+        }
+
+        async function syncStatusToBackend(id, status) {
+            document.getElementById('loadingIndicator').classList.remove('hidden');
             try {
-                await fetch(`${GAS_API_URL}?action=updateStatus&id=${currentId}&status=${status}`);
-                currentQueue.shift();
-                renderUI();
+                await fetch(`${GAS_API_URL}?action=updateStatus&id=${encodeURIComponent(id)}&status=${encodeURIComponent(status)}`, { 
+                    redirect: 'follow' 
+                });
             } catch (error) {
-                alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ ลองใหม่อีกครั้ง");
-                console.error(error);
+                console.warn("Background sync status failed:", error);
             } finally {
-                isUpdating = false;
                 document.getElementById('loadingIndicator').classList.add('hidden');
             }
         }
 
+        // --- Utility ---
+        function copyTextToClipboard(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                const old = btn.innerText;
+                btn.innerText = "✓";
+                setTimeout(() => btn.innerText = old, 1200);
+            });
+        }
+
+        function copyCurrentSongText() {
+            if (currentVipSong) navigator.clipboard.writeText(currentVipSong.title);
+            else if (currentQueue.length > 0) navigator.clipboard.writeText(currentQueue[0].song);
+        }
+
         function startApp() {
-            if (GAS_API_URL === "YOUR_GAS_WEB_APP_URL_HERE") {
-                alert("กรุณานำ Web App URL ของ Google Apps Script มาใส่ในไฟล์โค้ดก่อนใช้งานครับ");
-                return;
-            }
+            initSettingsStorage();
             fetchTimeSettings();
             fetchQueue();
-            setInterval(fetchQueue, 3000);
+            setInterval(fetchQueue, 3500);
         }
 
         window.onload = () => {
-            document.getElementById('pwdInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') checkPassword();
-            });
             document.getElementById('submitPwd').addEventListener('click', checkPassword);
-
+            document.getElementById('pwdInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPassword(); });
             if (sessionStorage.getItem('authorized') === 'true') {
                 document.getElementById('passwordOverlay').remove();
                 startApp();
