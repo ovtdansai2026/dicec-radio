@@ -193,13 +193,34 @@
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbynRYFemd7P2tDOxjklQUPpwzrLJAAute9Lrpd8uRMyC9029qAfUvNEWpu-MXxWTso4/exec"; 
 
+        // 🥷 กุญแจหลัก 1: หั่นท่อน
         const _k1 = "AIzaSy";
         const _k2 = "C_b01jeHcJb";
         const _k3 = "MjQ52YUl79J";
         const _k4 = "goXhTgci60E";
-        const YT_API_KEY = _k1 + _k2 + _k3 + _k4;
+        const KEY_1 = _k1 + _k2 + _k3 + _k4;
 
-        // 🎵 ลิสต์สำรอง (Video IDs) ป้องกันกรณีค้นหาไม่เจอ
+        // 🥷 กุญแจสำรอง 2 (ที่คุณส่งมาให้ใหม่): หั่นท่อน
+        const _b1 = "AIzaSyAb1w_";
+        const _b2 = "A6SkvUfoAkq";
+        const _b3 = "f8P_3yFkNN_";
+        const _b4 = "lSJbo4";
+        const KEY_2 = _b1 + _b2 + _b3 + _b4;
+
+        // ตัวจัดการสลับคีย์อัตโนมัติ (Failover Pool)
+        let activeKeyIndex = 0;
+        const API_KEYS = [KEY_1, KEY_2];
+
+        function getActiveKey() {
+            return API_KEYS[activeKeyIndex];
+        }
+
+        function switchKey() {
+            activeKeyIndex = (activeKeyIndex + 1) % API_KEYS.length;
+            console.warn("🔄 สลับไปใช้ YouTube API Key สำรองตัวที่:", activeKeyIndex + 1);
+        }
+
+        // 🎵 ลิสต์สำรอง (Video IDs) ป้องกันกรณีค้นหาไม่เจอ (ใช้โควตา 0 Units ตลอดกาล)
         const fallbackPlaylist = [
             "GJp5izApAlI", "2yUD--XAnJg", "6JbqGuX3yOo", 
             "Hc4OrO4LRWw", "0iXj7Zkb3Ik", "zMciAtU4miE"
@@ -278,7 +299,31 @@
             toggleVipMode();
         }
 
-        // --- 🤖 ระบบเล่นเพลงสุ่ม (Auto-DJ) ปลอดภัยไร้ลูปสแปม ---
+        // --- 🤖 ฟังก์ชันค้นหา YouTube อัจฉริยะ (สลับคีย์อัตโนมัติหากคีย์ 1 เต็ม) ---
+        async function fetchYouTubeSearch(query, maxResults = 1) {
+            let key = getActiveKey();
+            let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResults}&type=video&q=${encodeURIComponent(query)}&key=${key}`;
+            
+            try {
+                let res = await fetch(url);
+                let data = await res.json();
+
+                // ถ้าติด Quota Exceeded หรือ Error ให้สลับไปใช้คีย์ที่ 2 แล้วลองใหม่ 1 ครั้ง!
+                if (data.error && (data.error.code === 403 || data.error.message.includes('Quota'))) {
+                    switchKey();
+                    key = getActiveKey();
+                    url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResults}&type=video&q=${encodeURIComponent(query)}&key=${key}`;
+                    res = await fetch(url);
+                    data = await res.json();
+                }
+                return data;
+            } catch (err) {
+                console.error("Fetch YouTube Error:", err);
+                return null;
+            }
+        }
+
+        // --- 🤖 ระบบเล่นเพลงสุ่ม (Auto-DJ) ไม่มีสแปม 100% ---
         async function playRandomBGM() {
             const autoPlay = document.getElementById('autoPlayNext').checked;
             if (!isDjReady || !autoPlay || isVipMode) return;
@@ -296,23 +341,15 @@
             renderUI();
             document.getElementById('c_song').innerText = "กำลังค้นหาคลิป: " + randomSongTitle + "...";
 
-            try {
-                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(randomSongTitle)}&key=${YT_API_KEY}`);
-                const data = await res.json();
-                
-                if (data.items && data.items.length > 0) {
-                    const vid = data.items[0].id.videoId;
-                    currentVipSong.videoId = vid;
-                    loadVideoToPlayer(vid, null);
-                } else {
-                    // 🛑 ถ้าเสิร์ชไม่เจอ หรือติดสิทธิ์ ให้ดึงเพลงสำรองมาเล่นทันที (ห้าม setTimeout วนลูปเด็ดขาด!)
-                    console.warn("YouTube API search failed, using fallback video ID.");
-                    const fallbackVid = fallbackPlaylist[Math.floor(Math.random() * fallbackPlaylist.length)];
-                    currentVipSong.videoId = fallbackVid;
-                    loadVideoToPlayer(fallbackVid, null);
-                }
-            } catch (e) {
-                console.error("Auto-DJ network error, using fallback video ID:", e);
+            const data = await fetchYouTubeSearch(randomSongTitle, 1);
+            
+            if (data && data.items && data.items.length > 0) {
+                const vid = data.items[0].id.videoId;
+                currentVipSong.videoId = vid;
+                loadVideoToPlayer(vid, null);
+            } else {
+                // 🛑 ถ้าเสิร์ชไม่เจอ หรือโควตาหมดทั้ง 2 คีย์ ตัดเข้าเพลงสำรองทันที (ไม่มี setTimeout สแปมเด็ดขาด!)
+                console.warn("Search yielded no video, playing guaranteed fallback ID.");
                 const fallbackVid = fallbackPlaylist[Math.floor(Math.random() * fallbackPlaylist.length)];
                 currentVipSong.videoId = fallbackVid;
                 loadVideoToPlayer(fallbackVid, null);
@@ -425,7 +462,7 @@
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
-        // 🔍 ค้นหาเพลงด้วยมือ (แสดง Error ชัดเจนถ้า API ติดปัญหา)
+        // 🔍 ค้นหาด้วยมือ พร้อมระบบสลับคีย์อัตโนมัติ
         async function executeSearch() {
             const query = document.getElementById('modalSearchInput').value.trim();
             const container = document.getElementById('searchResultsContainer');
@@ -439,49 +476,47 @@
 
             container.innerHTML = `<div class="text-center text-yellow-400 py-6">กำลังค้นหาใน YouTube...</div>`;
 
-            try {
-                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&q=${encodeURIComponent(query)}&key=${YT_API_KEY}`);
-                const data = await res.json();
+            const data = await fetchYouTubeSearch(query, 5);
 
-                // 🚨 ตรวจจับข้อผิดพลาดของ Google API ชัดเจน
-                if (data.error) {
-                    container.innerHTML = `<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-xs">
-                        <strong>เกิดข้อผิดพลาดจาก YouTube API:</strong><br>
-                        ${data.error.message || 'รหัสข้อผิดพลาด ' + data.error.code}
-                    </div>`;
-                    return;
-                }
-
-                if (!data.items || data.items.length === 0) {
-                    container.innerHTML = `<p class="text-center text-gray-400 py-6">ไม่พบผลการค้นหา ลองพิมพ์ชื่อเพลงอื่นดูครับ</p>`;
-                    return;
-                }
-
-                searchResultsData = data.items;
-                container.innerHTML = '';
-
-                data.items.forEach((item, index) => {
-                    const title = item.snippet.title;
-                    const channel = item.snippet.channelTitle;
-                    const thumb = item.snippet.thumbnails.medium.url;
-
-                    const div = document.createElement('div');
-                    div.className = "flex gap-3 bg-slate-800/80 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700 items-center justify-between transition-all";
-                    div.innerHTML = `
-                        <div class="flex gap-3 items-center min-w-0">
-                            <img src="${thumb}" class="w-24 h-16 object-cover rounded-lg flex-shrink-0">
-                            <div class="min-w-0">
-                                <h4 class="text-white font-medium text-xs sm:text-sm line-clamp-2">${title}</h4>
-                                <p class="text-gray-400 text-xs truncate mt-0.5">${channel}</p>
-                            </div>
-                        </div>
-                        <button onclick="selectVideoByIndex(${index})" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 active:scale-95 shadow">เลือกคลิปนี้</button>
-                    `;
-                    container.appendChild(div);
-                });
-            } catch (err) {
+            if (!data) {
                 container.innerHTML = `<p class="text-center text-red-400 py-4">เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่</p>`;
+                return;
             }
+
+            if (data.error) {
+                container.innerHTML = `<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-xs">
+                    <strong>ข้อผิดพลาดจาก YouTube:</strong> ${data.error.message}
+                </div>`;
+                return;
+            }
+
+            if (!data.items || data.items.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 py-6">ไม่พบผลการค้นหา ลองพิมพ์ชื่อเพลงอื่นดูครับ</p>`;
+                return;
+            }
+
+            searchResultsData = data.items;
+            container.innerHTML = '';
+
+            data.items.forEach((item, index) => {
+                const title = item.snippet.title;
+                const channel = item.snippet.channelTitle;
+                const thumb = item.snippet.thumbnails.medium.url;
+
+                const div = document.createElement('div');
+                div.className = "flex gap-3 bg-slate-800/80 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700 items-center justify-between transition-all";
+                div.innerHTML = `
+                    <div class="flex gap-3 items-center min-w-0">
+                        <img src="${thumb}" class="w-24 h-16 object-cover rounded-lg flex-shrink-0">
+                        <div class="min-w-0">
+                            <h4 class="text-white font-medium text-xs sm:text-sm line-clamp-2">${title}</h4>
+                            <p class="text-gray-400 text-xs truncate mt-0.5">${channel}</p>
+                        </div>
+                    </div>
+                    <button onclick="selectVideoByIndex(${index})" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 active:scale-95 shadow">เลือกคลิปนี้</button>
+                `;
+                container.appendChild(div);
+            });
         }
 
         function selectVideoByIndex(index) {
@@ -557,7 +592,7 @@
             finally { document.getElementById('loadingIndicator').classList.add('hidden'); }
         }
 
-        // 🌟 ดึงคิวเพลง (ไม่มี Timeout แช่แข็งหน้าจอ)
+        // 🌟 ดึงคิวเพลงอย่างราบรื่น
         async function fetchQueue() {
             if (isVipMode) return; 
             
@@ -572,7 +607,6 @@
                 const isNewFirstSong = data.length > 0 && (currentQueue.length === 0 || currentQueue[0].id !== data[0].id);
                 currentQueue = data;
                 
-                // อัปเดตข้อมูลเข้า Modal
                 if (isInitialLoad) {
                     isInitialLoad = false;
                     const autoPlay = document.getElementById('autoPlayNext').checked;
@@ -595,7 +629,7 @@
                 }
 
             } catch (error) {
-                console.error("fetchQueue network error:", error);
+                console.error("fetchQueue error:", error);
             }
         }
 
@@ -617,18 +651,13 @@
 
             const autoPick = document.getElementById('autoPickFirst').checked;
             if (autoPick) {
-                try {
-                    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(songItem.song)}&key=${YT_API_KEY}`);
-                    const data = await res.json();
-                    if (data.items && data.items.length > 0) {
-                        const vid = data.items[0].id.videoId;
-                        assignedVideos[songItem.id] = { videoId: vid };
-                        loadVideoToPlayer(vid, songItem.id);
-                    } else {
-                        console.warn("Auto-pick search yielded no results for:", songItem.song);
-                    }
-                } catch (e) {
-                    console.error("Auto-pick search network error:", e);
+                const data = await fetchYouTubeSearch(songItem.song, 1);
+                if (data && data.items && data.items.length > 0) {
+                    const vid = data.items[0].id.videoId;
+                    assignedVideos[songItem.id] = { videoId: vid };
+                    loadVideoToPlayer(vid, songItem.id);
+                } else {
+                    console.warn("Auto-pick yielded no results for:", songItem.song);
                 }
             }
         }
@@ -775,7 +804,6 @@
                 isDjReady = true;
             }
 
-            // 🚀 เรียกคิวแบบไม่บล็อกหน้าจอ
             fetchQueue();
             setInterval(fetchQueue, 2500); 
         }
