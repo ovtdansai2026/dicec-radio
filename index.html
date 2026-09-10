@@ -461,7 +461,7 @@
             container.innerHTML = `<div class="text-center text-yellow-400 py-6">กำลังค้นหาใน YouTube...</div>`;
 
             try {
-                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&q=${encodeURIComponent(query)}&key=${YT_API_KEY}`);
+                const res = await fetch(`${GAS_API_URL}?action=searchYoutube&q=${encodeURIComponent(query)}`);
                 const data = await res.json();
 
                 if (!data.items || data.items.length === 0) {
