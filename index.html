@@ -120,6 +120,8 @@
             </div>
 
             <div id="currentSongBox" class="hidden flex-col gap-3 max-w-4xl mx-auto w-full">
+                
+                <!-- ข้อมูลเพลงปัจจุบัน -->
                 <div class="glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-700/80 shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div class="min-w-0 flex-grow">
                         <div class="flex items-center gap-2 mb-1">
@@ -134,6 +136,20 @@
                     </div>
                 </div>
 
+                <!-- 🎙️ กล่องข้อความอ่านออกอากาศหน้าไมค์ (สีทองเด่นชัด) -->
+                <div id="c_message_box" class="glass-panel p-3.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 flex items-start gap-3 shadow-lg">
+                    <span class="text-2xl mt-0.5">🎙️</span>
+                    <div class="min-w-0 flex-grow">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400 block mb-0.5">
+                            ข้อความอ่านออกอากาศหน้าไมค์:
+                        </span>
+                        <p id="c_message" class="text-amber-100 font-medium text-sm sm:text-base select-text">
+                            ไม่มีข้อความฝากถึง
+                        </p>
+                    </div>
+                </div>
+
+                <!-- YouTube Player Wrapper -->
                 <div class="glass-panel rounded-2xl overflow-hidden border border-slate-700 shadow-2xl relative bg-black aspect-video w-full max-h-[360px] flex items-center justify-center">
                     <div id="ytPlayerContainer" class="w-full h-full flex items-center justify-center"></div>
                     <div id="playerPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-gray-400 p-4 text-center pointer-events-none">
@@ -267,7 +283,6 @@
             toggleVipMode();
         }
 
-        // --- 🤖 ระบบเล่นเพลงสุ่ม (ใช้วิ่งเข้าหา YT API ตรงๆ เพื่อความเร็ว) ---
         async function playRandomBGM() {
             const autoPlay = document.getElementById('autoPlayNext').checked;
             if (!isDjReady || !autoPlay || isVipMode) return;
@@ -278,14 +293,14 @@
                 title: "🎧 ออโต้ดีเจ: " + randomSongTitle,
                 sender: "ระบบสุ่ม (รอรับคิว)",
                 videoId: null,
-                isBGM: true 
+                isBGM: true,
+                msg: "กำลังเล่นเพลงสุ่มจากเพลย์ลิสต์เพลงฮิตอัตโนมัติ"
             };
             
             renderUI();
             document.getElementById('c_song').innerText = "กำลังค้นหาคลิป: " + randomSongTitle + "...";
 
             try {
-                // ⚡ วิ่งตรงหา YouTube API (ไวมาก)
                 const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(randomSongTitle)}&key=${YT_API_KEY}`);
                 const data = await res.json();
                 
@@ -469,7 +484,7 @@
                     loadVideoToPlayer(videoId, targetQueueItemForSearch.id);
                 }
             } else {
-                currentVipSong = { title: title, sender: "ดีเจ (เพลงอิสระ / VIP)", videoId: videoId };
+                currentVipSong = { title: title, sender: "ดีเจ (เพลงอิสระ / VIP)", videoId: videoId, msg: "เปิดเพลงอิสระโดยดีเจ" };
                 loadVideoToPlayer(videoId, null);
             }
             closeSearchModal();
@@ -556,22 +571,19 @@
                     playRandomBGM();
                 }
 
-                // ⚡ เรียกฟังก์ชันแอบค้นหาเพลงคิวต่อไปรอไว้เลย
+                // แอบค้นหาเพลงคิวต่อไปรอไว้เลย
                 prefetchNextSongs();
 
             } catch (error) {}
         }
 
-        // ⚡ ฟังก์ชันแอบค้นหาคลิปล่วงหน้า (Zero Delay)
         async function prefetchNextSongs() {
             const autoPick = document.getElementById('autoPickFirst').checked;
             if (!autoPick || currentQueue.length < 2) return;
 
-            // ค้นหาล่วงหน้าให้ 2 คิวถัดไป (index 1 และ 2)
             for (let i = 1; i < Math.min(currentQueue.length, 3); i++) {
                 let item = currentQueue[i];
                 if (!assignedVideos[item.id]) {
-                    
                     let directId = extractVideoID(item.song);
                     if (directId) {
                         assignedVideos[item.id] = { videoId: directId };
@@ -584,14 +596,13 @@
                         let data = await res.json();
                         if (data.items && data.items.length > 0) {
                             assignedVideos[item.id] = { videoId: data.items[0].id.videoId };
-                            renderUI(); // อัปเดตให้มีเครื่องหมายถูก
+                            renderUI();
                         }
                     } catch (e) {}
                 }
             }
         }
 
-        // ⚡ โหลดเพลงคิวแรกลง Player (วิ่งตรง YT API)
         async function handleNewCurrentSong(songItem) {
             if (!songItem || !isDjReady) return; 
             if (currentPlayingSongId === songItem.id) return;
@@ -611,7 +622,6 @@
             const autoPick = document.getElementById('autoPickFirst').checked;
             if (autoPick) {
                 try {
-                    // ⚡ วิ่งตรงหา YouTube API
                     const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(songItem.song)}&key=${YT_API_KEY}`);
                     const data = await res.json();
                     if (data.items && data.items.length > 0) {
@@ -627,6 +637,7 @@
             const noQueueMessage = document.getElementById('noQueueMessage');
             const currentSongBox = document.getElementById('currentSongBox');
             const nextQueueContainer = document.getElementById('nextQueueContainer');
+            const msgBox = document.getElementById('c_message_box');
             
             document.getElementById('queueCount').innerText = currentQueue.length;
 
@@ -637,6 +648,15 @@
                 currentSongBox.classList.remove('hidden');
                 document.getElementById('c_sender').innerText = currentVipSong.sender;
                 document.getElementById('c_song').innerText = currentVipSong.title;
+                
+                // อัปเดตข้อความฝากถึง
+                if (currentVipSong.msg && currentVipSong.msg !== "-") {
+                    msgBox.classList.remove('hidden');
+                    document.getElementById('c_message').innerText = currentVipSong.msg;
+                } else {
+                    msgBox.classList.add('hidden');
+                }
+
                 startIndex = 0; 
             } else if (currentQueue.length === 0) {
                 noQueueMessage.classList.remove('hidden');
@@ -649,6 +669,16 @@
                 const current = currentQueue[0];
                 document.getElementById('c_sender').innerText = current.sender;
                 document.getElementById('c_song').innerText = current.song;
+
+                // 🎙️ แสดงข้อความอ่านหน้าไมค์แบบเด่นชัด
+                if (current.msg && current.msg !== "-") {
+                    msgBox.classList.remove('hidden');
+                    document.getElementById('c_message').innerText = `"${current.msg}"`;
+                } else {
+                    msgBox.classList.remove('hidden');
+                    document.getElementById('c_message').innerText = "ไม่มีข้อความฝากถึงเป็นพิเศษ";
+                }
+
                 startIndex = 1; 
             }
 
@@ -662,11 +692,15 @@
                     const safeSong = item.song.replace(/'/g, "\\'");
                     
                     const isNextUp = (i === 0 && currentVipSong) ? `<span class="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded ml-1 animate-pulse">คิวถัดไป!</span>` : '';
+                    
+                    // แสดงพรีวิวข้อความฝากถึงในแถบคิวด้านขวา
+                    const hasMsg = (item.msg && item.msg !== "-") ? `<p class="text-amber-300 text-[10px] mt-0.5 truncate">💬 "${item.msg}"</p>` : '';
 
                     div.innerHTML = `
                         <div class="min-w-0 flex-grow pl-1">
                             <p class="text-white font-medium text-xs truncate select-text">${item.song} ${isNextUp}</p>
                             <p class="text-gray-400 text-[10px] mt-0.5 truncate">โดย: <span class="text-blue-300">${item.sender}</span></p>
+                            ${hasMsg}
                             ${isAssigned ? `<span class="inline-block mt-1 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">✓ เตรียมโหลดรอแล้ว</span>` : ''}
                         </div>
                         <div class="flex items-center gap-1 flex-shrink-0">
