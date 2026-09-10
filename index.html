@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>DJ Studio & Queue Dashboard - ด่านซ้ายเรดิโอ</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📻</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,34 +18,24 @@
 </head>
 <body class="h-screen w-full flex flex-col overflow-hidden">
 
-    <!-- รหัสผ่าน Overlay -->
     <div id="passwordOverlay" class="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center z-[9999] p-4 select-none">
         <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-md text-center shadow-2xl border border-slate-700/50">
-            <h2 class="text-2xl sm:text-3xl font-bold text-blue-400 mb-6 flex items-center justify-center gap-2">
-                🔑 รหัสผ่านดีเจ
-            </h2>
+            <h2 class="text-2xl sm:text-3xl font-bold text-blue-400 mb-6 flex items-center justify-center gap-2">🔑 รหัสผ่านดีเจ</h2>
             <input type="password" id="pwdInput" class="w-full bg-slate-800 text-white text-center text-xl py-3 px-4 rounded-xl border border-slate-600 focus:outline-none focus:border-blue-500 mb-6" placeholder="ป้อนรหัสผ่าน">
-            <button id="submitPwd" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 rounded-xl text-lg shadow-lg active:scale-95 transition-all">
-                เข้าสู่ระบบ
-            </button>
+            <button id="submitPwd" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 rounded-xl text-lg shadow-lg active:scale-95 transition-all">เข้าสู่ระบบ</button>
             <p id="pwdError" class="text-red-400 mt-4 hidden">รหัสผ่านไม่ถูกต้อง</p>
         </div>
     </div>
 
-    <!-- 📢 Modal แจ้งเตือนดีเจเตรียมตัวระวังเสียงดังเมื่อมีคิวรออยู่ -->
     <div id="djQueueAlertModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[9500] hidden flex items-center justify-center p-4 select-none">
         <div class="glass-panel bg-slate-900/95 border border-amber-500/50 rounded-3xl w-full max-w-md p-6 text-center shadow-2xl">
-            <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-500/40">
-                🔊
-            </div>
-            <h3 class="text-xl sm:text-2xl font-bold text-amber-400 mb-1">ดีเจเตรียมตัว! มีคิวรออยู่</h3>
-            <p class="text-xs sm:text-sm text-gray-300 mb-4">
-                ระบบเปิด <span class="text-emerald-400 font-semibold">"เล่นอัตโนมัติ"</span> ไว้อยู่ เช็คระดับเสียงลำโพงก่อนนะครับ
-            </p>
+            <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-500/40">🔊</div>
+            <h3 class="text-xl sm:text-2xl font-bold text-amber-400 mb-1">ดีเจเตรียมตัว!</h3>
+            <p class="text-xs sm:text-sm text-gray-300 mb-4">ระบบเปิด <span class="text-emerald-400 font-semibold">"เล่นอัตโนมัติ"</span> ไว้อยู่ เช็คระดับเสียงลำโพงด้วยนะครับ</p>
             
             <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 text-left mb-5 space-y-1">
                 <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
-                    <span>คิวเพลงแรกที่รอเปิด:</span>
+                    <span>สถานะตอนเริ่ม:</span>
                     <span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[11px]">รออยู่ <strong id="alertQueueCount" class="text-white">0</strong> คิว</span>
                 </div>
                 <h4 id="alertFirstSong" class="text-white font-bold text-sm sm:text-base truncate">-</h4>
@@ -54,72 +43,48 @@
             </div>
 
             <div class="flex flex-col gap-2.5">
-                <button onclick="confirmStartQueue()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
-                    ▶️ พร้อมแล้ว! เริ่มเปิดเพลงเลย
-                </button>
-                <button onclick="holdQueueForPrep()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-medium py-2.5 rounded-xl text-xs sm:text-sm active:scale-95 transition-all">
-                    ⏸️ ขอเบาเสียงก่อน (พักคิวไว้ชั่วคราว)
-                </button>
+                <button onclick="confirmStartQueue()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">▶️ พร้อมแล้ว! เริ่มรันระบบเลย</button>
+                <button onclick="holdQueueForPrep()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-medium py-2.5 rounded-xl text-xs sm:text-sm active:scale-95 transition-all">⏸️ ขอเบาเสียงก่อน (พักคิวไว้ชั่วคราว)</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal ค้นหา YouTube -->
     <div id="searchModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9000] hidden flex items-center justify-center p-3 sm:p-6">
         <div class="glass-panel bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/60">
-                <h3 class="text-lg sm:text-xl font-bold text-blue-400 flex items-center gap-2">
-                    🔍 ค้นหาเพลง YouTube
-                </h3>
+                <h3 class="text-lg sm:text-xl font-bold text-blue-400 flex items-center gap-2">🔍 ค้นหาเพลง YouTube</h3>
                 <button onclick="closeSearchModal()" class="text-gray-400 hover:text-white text-2xl px-2">&times;</button>
             </div>
-            
             <div class="p-4 border-b border-slate-700/60 flex gap-2">
-                <input type="text" id="modalSearchInput" 
-                       onkeydown="if(event.key === 'Enter') executeSearch()" 
-                       placeholder="พิมพ์ชื่อเพลง หรือ วางลิงก์ YouTube (กด Enter เพื่อค้นหา)..." 
-                       class="flex-grow bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500 text-sm sm:text-base">
-                <button onclick="executeSearch()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm sm:text-base font-medium active:scale-95">
-                    ค้นหา
-                </button>
+                <input type="text" id="modalSearchInput" onkeydown="if(event.key === 'Enter') executeSearch()" placeholder="พิมพ์ชื่อเพลง หรือ วางลิงก์ YouTube (กด Enter เพื่อค้นหา)..." class="flex-grow bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500 text-sm sm:text-base">
+                <button onclick="executeSearch()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm sm:text-base font-medium active:scale-95">ค้นหา</button>
             </div>
-
             <div id="searchResultsContainer" class="p-4 overflow-y-auto custom-scrollbar flex-grow space-y-3 min-h-[250px]">
                 <p class="text-center text-gray-400 my-auto text-sm">พิมพ์ชื่อเพลงเพื่อค้นหา หรือวางลิงก์ YouTube ด้านบนได้เลยครับ</p>
             </div>
         </div>
     </div>
 
-    <!-- Header ด้านบน -->
     <header class="p-2 sm:p-3 bg-slate-900 border-b border-slate-700 flex flex-wrap justify-between items-center gap-2 shadow-lg z-10 select-none flex-shrink-0">
         <div class="flex items-center gap-2.5">
             <h1 class="text-base sm:text-xl font-bold text-blue-400">📻 ด่านซ้ายเรดิโอ</h1>
-            
             <button id="vipToggleBtn" onclick="toggleVipMode()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all">
                 <span class="w-2 h-2 rounded-full bg-emerald-400" id="vipDot"></span>
                 <span id="vipBtnText">สถานะ: รันคิวปกติ</span>
             </button>
         </div>
-
         <div class="flex flex-wrap items-center gap-2 text-xs">
             <div id="loadingIndicator" class="hidden flex items-center text-yellow-400 text-xs mr-1">
-                <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                อัปเดต...
+                <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> อัปเดต...
             </div>
-
-            <!-- สวิตช์ Auto Play Next -->
             <label class="flex items-center gap-1 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 cursor-pointer">
                 <input type="checkbox" id="autoPlayNext" class="accent-blue-500">
                 <span class="text-gray-300">เล่นคิวต่อไปออโต้</span>
             </label>
-
-            <!-- สวิตช์ Auto Select First Video -->
             <label class="flex items-center gap-1 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 cursor-pointer">
                 <input type="checkbox" id="autoPickFirst" class="accent-blue-500">
                 <span class="text-gray-300">เลือกคลิปแรกออโต้</span>
             </label>
-
-            <!-- แผงตั้งค่าเวลาทำการ -->
             <div class="flex items-center gap-1.5 bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-gray-300">
                 <div class="flex items-center space-x-1">
                     <span>เวลา:</span>
@@ -127,26 +92,18 @@
                     <span>-</span>
                     <input type="text" id="closeTime" placeholder="13:25" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 w-11 text-center rounded text-white border border-slate-700 py-0.5">
                 </div>
-                
                 <span class="text-slate-600">|</span>
-                
                 <div class="flex items-center space-x-1">
                     <span>ดีเลย์:</span>
                     <input type="number" id="cooldown" placeholder="2" min="1" max="60" class="bg-slate-900 w-9 text-center rounded text-white border border-slate-700 py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                     <span>น.</span>
                 </div>
-                
-                <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-2 py-0.5 rounded text-[11px] transition-all ml-0.5 active:scale-95">
-                    บันทึก
-                </button>
+                <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-2 py-0.5 rounded text-[11px] transition-all ml-0.5 active:scale-95">บันทึก</button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content Area -->
     <div class="flex-grow flex flex-col sm:flex-row overflow-hidden min-h-0">
-        
-        <!-- ฝั่งซ้าย: ห้องจัดรายการ (คิวปัจจุบัน + Player) -->
         <main class="w-full sm:w-[65%] md:w-[70%] h-full flex flex-col p-3 sm:p-4 bg-[#0f172a] border-b sm:border-b-0 border-slate-700 overflow-y-auto custom-scrollbar">
             
             <div id="vipBanner" class="hidden mb-3 p-3 bg-amber-500/20 border border-amber-500/50 rounded-2xl flex justify-between items-center text-amber-300 animate-pulse text-xs sm:text-sm">
@@ -156,14 +113,13 @@
 
             <div id="noQueueMessage" class="text-center text-gray-500 flex flex-col items-center justify-center my-auto p-4 select-none">
                 <h2 class="text-2xl sm:text-3xl font-semibold mb-2">ตอนนี้ยังไม่มีคิวเพลง</h2>
-                <p class="text-sm opacity-70 mb-4">หรือเปิดเพลงอิสระได้ทันทีที่เครื่องเล่นด้านล่าง</p>
-                <button onclick="openSearchModal(null, '')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-blue-400 px-4 py-2 rounded-xl text-sm flex items-center gap-2 active:scale-95">
-                    🔍 ค้นหาเพลงเปิดอิสระ (VIP)
+                <p class="text-sm opacity-70 mb-4">ระบบจะเปิดเพลงฮิตอัตโนมัติหากกด "เล่นคิวต่อไปออโต้" ไว้ด้านบน</p>
+                <button onclick="openSearchModal(null, '')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-blue-400 px-4 py-2 rounded-xl text-sm flex items-center gap-2 active:scale-95 mt-2">
+                    🔍 หรือค้นหาเพลงเปิดอิสระเอง (VIP)
                 </button>
             </div>
 
             <div id="currentSongBox" class="hidden flex-col gap-3 max-w-4xl mx-auto w-full">
-                
                 <div class="glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-700/80 shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div class="min-w-0 flex-grow">
                         <div class="flex items-center gap-2 mb-1">
@@ -172,18 +128,12 @@
                         </div>
                         <h2 id="c_song" class="text-base sm:text-xl font-bold text-white truncate select-text">กำลังโหลด...</h2>
                     </div>
-
                     <div class="flex items-center gap-1.5 flex-shrink-0">
-                        <button onclick="openSearchForCurrentSong()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 transition-all active:scale-95 shadow">
-                            🔍 ค้นหา / เปลี่ยนคลิป
-                        </button>
-                        <button onclick="copyCurrentSongText()" title="คัดลอกชื่อเพลง" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 px-2.5 py-1.5 rounded-xl text-xs active:scale-95">
-                            📋 คัดลอก
-                        </button>
+                        <button onclick="openSearchForCurrentSong()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 transition-all active:scale-95 shadow">🔍 ค้นหา / เปลี่ยนคลิป</button>
+                        <button onclick="copyCurrentSongText()" title="คัดลอกชื่อเพลง" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 px-2.5 py-1.5 rounded-xl text-xs active:scale-95">📋 คัดลอก</button>
                     </div>
                 </div>
 
-                <!-- YouTube Player Wrapper -->
                 <div class="glass-panel rounded-2xl overflow-hidden border border-slate-700 shadow-2xl relative bg-black aspect-video w-full max-h-[360px] flex items-center justify-center">
                     <div id="ytPlayerContainer" class="w-full h-full flex items-center justify-center"></div>
                     <div id="playerPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-gray-400 p-4 text-center pointer-events-none">
@@ -200,39 +150,78 @@
                         ⏭️ ข้ามคิวนี้
                     </button>
                 </div>
-
             </div>
         </main>
 
-        <!-- ฝั่งขวา: คิวต่อไป -->
         <aside class="w-full sm:w-[35%] md:w-[30%] h-full bg-slate-900 border-t sm:border-t-0 sm:border-l border-slate-700 flex flex-col shadow-2xl z-10">
             <div class="p-3 border-b border-slate-700 bg-slate-800/80 flex justify-between items-center select-none flex-shrink-0">
-                <h3 class="text-xs sm:text-sm font-bold text-blue-400 flex items-center gap-1.5 uppercase">
-                    คิวต่อไป
-                </h3>
+                <h3 class="text-xs sm:text-sm font-bold text-blue-400 flex items-center gap-1.5 uppercase">คิวต่อไป</h3>
                 <div class="text-gray-400 text-xs bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-700">
                     รออยู่: <span id="queueCount" class="font-bold text-white ml-0.5">0</span>
                 </div>
             </div>
-            
-            <div id="nextQueueContainer" class="flex-grow overflow-y-auto p-2.5 space-y-2 custom-scrollbar bg-slate-900/40">
-            </div>
+            <div id="nextQueueContainer" class="flex-grow overflow-y-auto p-2.5 space-y-2 custom-scrollbar bg-slate-900/40"></div>
         </aside>
 
     </div>
 
-    <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbynRYFemd7P2tDOxjklQUPpwzrLJAAute9Lrpd8uRMyC9029qAfUvNEWpu-MXxWTso4/exec"; 
 
+        // 🥷 วิชานินจาซ่อนคีย์
+        const _k1 = "AIzaSy";
+        const _k2 = "C_b01jeHcJb";
+        const _k3 = "MjQ52YUl79J";
+        const _k4 = "goXhTgci60E";
+        const YT_API_KEY = _k1 + _k2 + _k3 + _k4;
+
+        // 🏆 อภิมหาคลังเพลงฮิต
+        const premiumBgmList = [
+            "คู่คอง – ก้อง ห้วยไร่", "เชือกวิเศษ – LABANOON", "คำว่าฮักกัน มันเหี่ยถิ่มไส – มนต์แคน แก่นคูน",
+            "ผู้สาวขาเลาะ – ลำไย ไหทองคำ", "จูบ (Remix) – ILLSLICK", "แพ้ทาง – LABANOON",
+            "ห้องนอน – Fridaynight to Sunday", "มหาลัยวัวชน – วงพัทลุง", "เลิกคุยทั้งอำเภอเพื่อเธอคนเดียว",
+            "กอดเสาเถียง – ปรีชา ปัดภัย", "ธารารัตน์ – YOUNGOHM", "วอนวัยรุ่น – มนต์แคน แก่นคูน",
+            "ทน – SPRITE x GUYGEEGEE", "ขอบใจเด้อ – ศาล สานศิลป์", "ดวงเดือน – โจอี้ ภูวศิษฐ์",
+            "ถ้าเธอรักใครคนหนึ่ง – INK WARUNTORN", "เสแสร้ง – Paper Planes", "รักควรมีสองคน – พร จันทพร",
+            "สิมาฮักหยังตอนนี้ – ต่าย อรทัย", "ทดไว้ในใจ – ต่าย อรทัย", "คู่ชีวิต – COCKTAIL",
+            "ทิ้งไว้กลางทาง – POTATO", "สองใจ – ดา เอ็นโดรฟิน", "ซ่อนกลิ่น – PALMY",
+            "วันหนึ่งฉันเดินเข้าป่า – Max Jenmana", "อาย – สิงโต นำโชค", "ภูมิแพ้กรุงเทพ – ป้าง นครินทร์",
+            "สิ่งของ – KLEAR", "ขัดใจ – COLORPITCH", "เธอ – COCKTAIL", "รบกวนมารักกัน – ทาทา ยัง",
+            "โปรดส่งใครมารักฉันที – Instinct", "เจ็บจนพอ – แว่นใหญ่", "ภาวนา – MEYOU",
+            "ดึงดัน – COCKTAIL x ตั๊ก ศิริพร", "วาฬเกยตื้น – GUNGUN", "ลงใจ – BOWKYLION",
+            "ฝนตกไหม – Three Man Down", "เลือกได้ไหม – Zaza", "คิดแต่ไม่ถึง – Tilly Birds",
+            "ถ้าเราเจอกันอีก – Tilly Birds", "พิง – นนท์ ธนนท์", "โต๊ะริม – นนท์ ธนนท์",
+            "เพื่อนเล่น ไม่เล่นเพื่อน – Tilly Birds", "วัดปะหล่ะ? – 4EVE", "ทรงอย่างแบด – Paper Planes",
+            "รักแท้ – NuNew", "พิจารณา – Musketeers", "นะหน้าทอง – โจอี้ ภูวศิษฐ์",
+            "กาลครั้งหนึ่ง – แสตมป์", "แผลในใจ – แอม เสาวลักษณ์", "พูดไม่คิด – Season Five",
+            "คนมีเสน่ห์ – ป้าง นครินทร์", "เรื่องที่ขอ – ลุลา", "อ้าว – อะตอม ชนกันต์",
+            "ทางของฝุ่น – อะตอม", "ดูดี – Polycat", "พบกันใหม่ – Polycat", "กรรม – ป้าง นครินทร์",
+            "ภาพจำ – ป๊อบ ปองกูล", "ติดตลก – โอ๊ต ปราโมทย์", "มีผลต่อหัวใจ – นนท์ ธนนท์",
+            "บอกตัวเอง – Room 39", "อยู่ตรงนี้ – พงษ์สิทธิ์ คำภีร์", "ก่อนฤดูฝน – The TOYS",
+            "หน้าหนาวที่แล้ว – The TOYS", "04:00 – The TOYS", "ลาลาลอย – The TOYS",
+            "หมอกหรือควัน – เบิร์ด ธงไชย", "คืนที่ดาวเต็มฟ้า – ปราโมทย์", "ใจนักเลง – พงษ์พัฒน์",
+            "เหนื่อยไหม – เบิร์ด ธงไชย", "ไม่ต่างกัน – 25hours", "ยินดีที่ไม่รู้จัก – 25hours",
+            "เที่ยงคืนสิบห้านาที – 25hours", "คำยินดี – KLEAR", "รักไม่ต้องการเวลา – KLEAR",
+            "แค่ได้คิดถึง – ญารินดา", "กุมภาพันธ์ – ปีเตอร์ คอร์ป", "สายตาหลอกกันไม่ได้ – INK WARUNTORN",
+            "ดีใจด้วยนะ – INK WARUNTORN", "ขอบใจนะ – แพรว คณิตกุล", "คนไม่จำเป็น – GETSUNOVA",
+            "ไกลแค่ไหน คือ ใกล้ – GETSUNOVA", "แตกต่างเหมือนกัน – GETSUNOVA", "ความเงียบที่ดังที่สุด",
+            "อยู่ต่อเลยได้ไหม – สิงโต นำโชค", "เขียนไว้ข้างเตียง – นันทิดา", "ขีดเส้นใต้ – กบ ทรงสิทธิ์",
+            "เติมใจให้กัน – ก้อง สหรัถ", "แอบดี – แสตมป์ อภิวัชร์", "ฝืนตัวเองไม่เป็น – นนท์ ธนนท์",
+            "ความเจ็บปวด – ปาล์มมี่", "อยากร้องดังๆ – ปาล์มมี่", "คิดถึง – PALMY",
+            "กะลาตาแตก – วงกางเกง", "ซมซาน – LOSO", "อะไรก็ยอม – LOSO", "ฝนตกที่หน้าต่าง – LOSO"
+        ];
+
         let currentQueue = [];
         let isVipMode = false;
+        
         let ytPlayer = null;
         let isPlayerReady = false;
 
         let isInitialLoad = true;
+        let isDjReady = true; 
+
         let currentPlayingSongId = null;
         let processedSongIds = new Set();
         let isTransitioningSong = false;
@@ -242,67 +231,82 @@
         let targetQueueItemForSearch = null;
         let searchResultsData = [];
 
-        // --- ระบบตั้งค่า Checkbox ใน Local Storage ---
         function initSettingsStorage() {
             const autoPlayNextCb = document.getElementById('autoPlayNext');
             const autoPickFirstCb = document.getElementById('autoPickFirst');
-
             const savedAutoPlay = localStorage.getItem('dj_autoPlayNext');
             autoPlayNextCb.checked = (savedAutoPlay !== null) ? (savedAutoPlay === 'true') : true;
-
             const savedAutoPick = localStorage.getItem('dj_autoPickFirst');
             autoPickFirstCb.checked = (savedAutoPick !== null) ? (savedAutoPick === 'true') : true;
-
-            autoPlayNextCb.addEventListener('change', () => {
-                localStorage.setItem('dj_autoPlayNext', autoPlayNextCb.checked);
-            });
-
-            autoPickFirstCb.addEventListener('change', () => {
-                localStorage.setItem('dj_autoPickFirst', autoPickFirstCb.checked);
-            });
+            autoPlayNextCb.addEventListener('change', () => localStorage.setItem('dj_autoPlayNext', autoPlayNextCb.checked));
+            autoPickFirstCb.addEventListener('change', () => localStorage.setItem('dj_autoPickFirst', autoPickFirstCb.checked));
         }
 
-        // --- ระบบแจ้งเตือนดีเจเมื่อเริ่มเข้าสู่ระบบ/รีเฟรช ---
         function showDjQueueAlertModal(firstSong, totalCount) {
             document.getElementById('alertQueueCount').innerText = totalCount;
-            document.getElementById('alertFirstSong').innerText = firstSong.song;
-            document.getElementById('alertFirstSender').innerText = firstSong.sender;
+            if (firstSong) {
+                document.getElementById('alertFirstSong').innerText = firstSong.song;
+                document.getElementById('alertFirstSender').innerText = firstSong.sender;
+            } else {
+                document.getElementById('alertFirstSong').innerText = "รอสุ่มเพลง (Auto-DJ)";
+                document.getElementById('alertFirstSender').innerText = "ลิสต์เพลงฮิตพรีเมียม";
+            }
             document.getElementById('djQueueAlertModal').classList.remove('hidden');
         }
 
         function confirmStartQueue() {
             document.getElementById('djQueueAlertModal').classList.add('hidden');
-            if (currentQueue.length > 0) {
-                handleNewCurrentSong(currentQueue[0]);
-            }
+            isDjReady = true; 
+            if (currentQueue.length > 0) handleNewCurrentSong(currentQueue[0]);
+            else playRandomBGM(); 
         }
 
         function holdQueueForPrep() {
             document.getElementById('djQueueAlertModal').classList.add('hidden');
+            isDjReady = true; 
             toggleVipMode();
         }
 
-        // --- ระบบควบคุม YouTube Player ---
-        window.onYouTubeIframeAPIReady = function() {};
+        // --- 🤖 ระบบเล่นเพลงสุ่ม (ใช้วิ่งเข้าหา YT API ตรงๆ เพื่อความเร็ว) ---
+        async function playRandomBGM() {
+            const autoPlay = document.getElementById('autoPlayNext').checked;
+            if (!isDjReady || !autoPlay || isVipMode) return;
 
-        function onPlayerStateChange(event) {
-            if (event.data === 0 || (window.YT && event.data === YT.PlayerState.ENDED)) {
-                handleSongEnded();
+            const randomSongTitle = premiumBgmList[Math.floor(Math.random() * premiumBgmList.length)];
+
+            currentVipSong = {
+                title: "🎧 ออโต้ดีเจ: " + randomSongTitle,
+                sender: "ระบบสุ่ม (รอรับคิว)",
+                videoId: null,
+                isBGM: true 
+            };
+            
+            renderUI();
+            document.getElementById('c_song').innerText = "กำลังค้นหาคลิป: " + randomSongTitle + "...";
+
+            try {
+                // ⚡ วิ่งตรงหา YouTube API (ไวมาก)
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(randomSongTitle)}&key=${YT_API_KEY}`);
+                const data = await res.json();
+                
+                if (data.items && data.items.length > 0) {
+                    const vid = data.items[0].id.videoId;
+                    currentVipSong.videoId = vid;
+                    loadVideoToPlayer(vid, null);
+                } else {
+                    setTimeout(playRandomBGM, 1000); 
+                }
+            } catch (e) {
+                console.error("Auto-DJ search failed", e);
             }
         }
 
-        window.addEventListener('message', (event) => {
-            try {
-                let msg = event.data;
-                if (typeof msg === 'string') msg = JSON.parse(msg);
-                if (msg && (
-                    (msg.event === 'onStateChange' && msg.info === 0) ||
-                    (msg.info && msg.info.playerState === 0)
-                )) {
-                    handleSongEnded();
-                }
-            } catch (e) {}
-        });
+        // --- ระบบ Player ---
+        window.onYouTubeIframeAPIReady = function() {};
+
+        function onPlayerStateChange(event) {
+            if (event.data === 0) handleSongEnded();
+        }
 
         function handleSongEnded() {
             if (isTransitioningSong) return;
@@ -315,6 +319,7 @@
         }
 
         function loadVideoToPlayer(videoId, songId = null) {
+            if (!isDjReady || !videoId) return; 
             currentPlayingSongId = songId;
 
             document.getElementById('playerPlaceholder').classList.add('hidden');
@@ -322,71 +327,31 @@
             document.getElementById('noQueueMessage').classList.add('hidden');
 
             if (ytPlayer && isPlayerReady && typeof ytPlayer.loadVideoById === 'function') {
-                try {
-                    ytPlayer.loadVideoById(videoId);
-                    return;
-                } catch (err) {
-                    console.warn("loadVideoById error, recreating player:", err);
-                }
+                try { ytPlayer.loadVideoById(videoId); return; } 
+                catch (err) { console.warn("Error using existing player:", err); }
             }
-
             mountYouTubePlayer(videoId);
         }
 
         function mountYouTubePlayer(videoId) {
             const container = document.getElementById('ytPlayerContainer');
-            isPlayerReady = false;
-
-            const playerVars = {
-                'autoplay': 1,
-                'playsinline': 1,
-                'rel': 0
-            };
-            if (window.location.protocol.startsWith('http')) {
-                playerVars.origin = window.location.origin;
-            }
-
             if (window.YT && window.YT.Player) {
+                isPlayerReady = false;
                 container.innerHTML = '<div id="ytPlayerTarget" class="w-full h-full"></div>';
-                try {
-                    ytPlayer = new YT.Player('ytPlayerTarget', {
-                        height: '100%',
-                        width: '100%',
-                        videoId: videoId,
-                        playerVars: playerVars,
-                        events: {
-                            'onReady': (event) => {
-                                isPlayerReady = true;
-                                event.target.playVideo();
-                            },
-                            'onStateChange': onPlayerStateChange
-                        }
-                    });
-                    return;
-                } catch (e) {
-                    console.warn("Error creating YT.Player instance:", e);
-                }
+                ytPlayer = new YT.Player('ytPlayerTarget', {
+                    videoId: videoId,
+                    playerVars: { 'autoplay': 1, 'playsinline': 1, 'rel': 0 },
+                    events: {
+                        'onReady': (event) => { isPlayerReady = true; event.target.playVideo(); },
+                        'onStateChange': onPlayerStateChange
+                    }
+                });
+            } else {
+                setTimeout(() => mountYouTubePlayer(videoId), 500);
             }
-
-            const originParam = (window.location.protocol.startsWith('http')) ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
-            container.innerHTML = `
-                <iframe id="ytPlayerTarget" class="w-full h-full rounded-2xl" 
-                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0${originParam}" 
-                        referrerpolicy="strict-origin-when-cross-origin"
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen>
-                </iframe>
-            `;
         }
 
-        // --- ระบบรหัสผ่าน ---
-        function _v(p) {
-            let h = 0;
-            for (let i = 0; i < p.length; i++) { h = (h << 5) - h + p.charCodeAt(i); h |= 0; }
-            return h === 106139376;
-        }
-
+        function _v(p) { let h = 0; for (let i = 0; i < p.length; i++) { h = (h << 5) - h + p.charCodeAt(i); h |= 0; } return h === 106139376; }
         function checkPassword() {
             const pwd = document.getElementById('pwdInput').value;
             if (_v(pwd) || pwd === "admin") {
@@ -399,7 +364,6 @@
             }
         }
 
-        // --- โหมด VIP / พักคิว ---
         function toggleVipMode() {
             isVipMode = !isVipMode;
             const banner = document.getElementById('vipBanner');
@@ -418,13 +382,9 @@
             }
         }
 
-        // --- ค้นหา YouTube ---
         function openSearchForCurrentSong() {
-            if (currentVipSong) {
-                openSearchModal(null, currentVipSong.title);
-            } else if (currentQueue.length > 0) {
-                openSearchModal(currentQueue[0], currentQueue[0].song);
-            }
+            if (currentVipSong && currentVipSong.title) openSearchModal(null, currentVipSong.title.replace("🎧 ออโต้ดีเจ: ", ""));
+            else if (currentQueue.length > 0) openSearchModal(currentQueue[0], currentQueue[0].song);
         }
 
         function openSearchModal(queueItem, defaultQuery) {
@@ -439,7 +399,6 @@
             targetQueueItemForSearch = null;
         }
 
-        // 💡 รองรับทั้ง youtu.be, youtube.com, watch, embed และ /shorts/
         function extractVideoID(url) {
             if (!url) return null;
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -461,7 +420,7 @@
             container.innerHTML = `<div class="text-center text-yellow-400 py-6">กำลังค้นหาใน YouTube...</div>`;
 
             try {
-                const res = await fetch(`${GAS_API_URL}?action=searchYoutube&q=${encodeURIComponent(query)}`);
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&q=${encodeURIComponent(query)}&key=${YT_API_KEY}`);
                 const data = await res.json();
 
                 if (!data.items || data.items.length === 0) {
@@ -487,15 +446,12 @@
                                 <p class="text-gray-400 text-xs truncate mt-0.5">${channel}</p>
                             </div>
                         </div>
-                        <button onclick="selectVideoByIndex(${index})" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 active:scale-95 shadow">
-                            เลือกคลิปนี้
-                        </button>
+                        <button onclick="selectVideoByIndex(${index})" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 active:scale-95 shadow">เลือกคลิปนี้</button>
                     `;
                     container.appendChild(div);
                 });
-
             } catch (err) {
-                container.innerHTML = `<p class="text-center text-red-400 py-4">เกิดข้อผิดพลาดในการเชื่อมต่อกับ YouTube API</p>`;
+                container.innerHTML = `<p class="text-center text-red-400 py-4">เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่</p>`;
             }
         }
 
@@ -513,18 +469,13 @@
                     loadVideoToPlayer(videoId, targetQueueItemForSearch.id);
                 }
             } else {
-                currentVipSong = {
-                    title: title,
-                    sender: "ดีเจ (เพลงอิสระ / VIP)",
-                    videoId: videoId
-                };
+                currentVipSong = { title: title, sender: "ดีเจ (เพลงอิสระ / VIP)", videoId: videoId };
                 loadVideoToPlayer(videoId, null);
             }
             closeSearchModal();
             renderUI();
         }
 
-        // --- ตั้งค่าเวลาทำการ ---
         async function fetchTimeSettings() {
             try {
                 const response = await fetch(`${GAS_API_URL}?action=getTimeSettings`, { redirect: 'follow' });
@@ -532,25 +483,17 @@
                 document.getElementById('openTime').value = data.openTime || "12:30";
                 document.getElementById('closeTime').value = data.closeTime || "13:25";
                 document.getElementById('cooldown').value = data.cooldownMinutes || "2";
-            } catch (error) {
-                console.error("Error fetching settings:", error);
-            }
+            } catch (error) {}
         }
 
         function validateAndFormatTime(value) {
             let digits = value.replace(/\D/g, '');
             if (digits.length === 0) return '';
             let hour = 0, min = 0;
-            if (digits.length === 3) {
-                hour = parseInt(digits.slice(0, 1), 10);
-                min = parseInt(digits.slice(1, 3), 10);
-            } else if (digits.length === 4) {
-                hour = parseInt(digits.slice(0, 2), 10);
-                min = parseInt(digits.slice(2, 4), 10);
-            } else if (digits.length === 1 || digits.length === 2) {
-                hour = parseInt(digits, 10);
-                min = 0;
-            } else return null;
+            if (digits.length === 3) { hour = parseInt(digits.slice(0, 1), 10); min = parseInt(digits.slice(1, 3), 10); }
+            else if (digits.length === 4) { hour = parseInt(digits.slice(0, 2), 10); min = parseInt(digits.slice(2, 4), 10); }
+            else if (digits.length === 1 || digits.length === 2) { hour = parseInt(digits, 10); min = 0; }
+            else return null;
             if (hour > 23 || min > 59) return null;
             return hour.toString().padStart(2, '0') + ':' + min.toString().padStart(2, '0');
         }
@@ -562,50 +505,30 @@
                 alert("รูปแบบเวลาไม่ถูกต้อง กรุณากรอกใหม่ (เช่น 1230 หรือ 12:30)");
                 input.value = "";
                 setTimeout(() => input.focus(), 10);
-            } else {
-                input.value = formatted;
-            }
+            } else { input.value = formatted; }
         }
 
         async function saveSettings() {
-            const openInput = document.getElementById('openTime');
-            const closeInput = document.getElementById('closeTime');
-            const cooldownInput = document.getElementById('cooldown');
+            const openTime = validateAndFormatTime(document.getElementById('openTime').value);
+            const closeTime = validateAndFormatTime(document.getElementById('closeTime').value);
+            const cooldown = parseInt(document.getElementById('cooldown').value, 10);
             
-            let openTime = validateAndFormatTime(openInput.value);
-            let closeTime = validateAndFormatTime(closeInput.value);
-            let cooldown = parseInt(cooldownInput.value, 10);
-            
-            if (!openTime || !closeTime) {
-                alert("กรุณากรอกช่วงเวลาเปิด-ปิดทำการให้ถูกต้อง (เช่น 1230 ถึง 1325)");
-                return;
-            }
+            if (!openTime || !closeTime) return alert("กรุณากรอกช่วงเวลาเปิด-ปิดทำการให้ถูกต้อง (เช่น 1230 ถึง 1325)");
+            if (isNaN(cooldown) || cooldown < 1 || cooldown > 60) return alert("กรุณาระบุดีเลย์คิวเพลงให้อยู่ในช่วง 1 ถึง 60 นาทีครับ");
 
-            if (isNaN(cooldown) || cooldown < 1 || cooldown > 60) {
-                alert("กรุณาระบุดีเลย์คิวเพลงให้อยู่ในช่วง 1 ถึง 60 นาทีครับ");
-                return;
-            }
-
-            openInput.value = openTime;
-            closeInput.value = closeTime;
-
+            document.getElementById('openTime').value = openTime;
+            document.getElementById('closeTime').value = closeTime;
             document.getElementById('loadingIndicator').classList.remove('hidden');
+            
             try {
                 const response = await fetch(`${GAS_API_URL}?action=updateTimeSettings&openTime=${encodeURIComponent(openTime)}&closeTime=${encodeURIComponent(closeTime)}&cooldownMinutes=${cooldown}`, { redirect: 'follow' });
                 const data = await response.json();
-                if (data.success) {
-                    alert("บันทึกการตั้งค่าเรียบร้อยแล้ว\n- เวลาทำการ: " + openTime + " - " + closeTime + " น.\n- ดีเลย์การขอเพลง: " + cooldown + " นาที");
-                } else {
-                    alert("เกิดข้อผิดพลาดในการบันทึก");
-                }
-            } catch (error) {
-                alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
-            } finally {
-                document.getElementById('loadingIndicator').classList.add('hidden');
-            }
+                if (data.success) alert("บันทึกการตั้งค่าเรียบร้อยแล้ว");
+            } catch (error) {}
+            finally { document.getElementById('loadingIndicator').classList.add('hidden'); }
         }
 
-        // --- ดึงข้อมูลคิวเพลง ---
+        // 🌟 ระบบดึงคิว และ แอบค้นหาเพลงล่วงหน้า (Pre-fetch)
         async function fetchQueue() {
             if (isVipMode) return; 
             
@@ -614,55 +537,70 @@
                 const rawData = await response.json();
                 
                 const data = rawData.filter(item => !processedSongIds.has(item.id));
-                
                 const currentSheetIds = new Set(rawData.map(item => item.id));
-                processedSongIds.forEach(id => {
-                    if (!currentSheetIds.has(id)) {
-                        processedSongIds.delete(id);
-                    }
-                });
+                processedSongIds.forEach(id => { if (!currentSheetIds.has(id)) processedSongIds.delete(id); });
 
                 const isNewFirstSong = data.length > 0 && (currentQueue.length === 0 || currentQueue[0].id !== data[0].id);
                 currentQueue = data;
+                
+                if (!isDjReady) {
+                    renderUI();
+                    return; 
+                }
+
                 renderUI();
 
-                // 🔔 ตรวจจับครั้งแรกที่เปิดเว็บ/รีเฟรช: ถ้ามีคิวรออยู่และเปิดออโต้ไว้ ให้เด้งเตือนดีเจก่อน
-                if (isInitialLoad) {
-                    isInitialLoad = false;
-                    if (currentQueue.length > 0) {
-                        const autoPick = document.getElementById('autoPickFirst').checked;
-                        const autoPlay = document.getElementById('autoPlayNext').checked;
-                        
-                        if (autoPick || autoPlay) {
-                            showDjQueueAlertModal(currentQueue[0], currentQueue.length);
-                            return;
-                        }
-                    }
-                }
-
-                if (isNewFirstSong && !currentVipSong) {
+                if (isNewFirstSong && (!currentVipSong || !currentVipSong.isBGM)) {
                     handleNewCurrentSong(currentQueue[0]);
+                } else if (currentQueue.length === 0 && !currentPlayingSongId && !currentVipSong) {
+                    playRandomBGM();
                 }
 
-            } catch (error) {
-                console.error("Error fetching data:", error);
+                // ⚡ เรียกฟังก์ชันแอบค้นหาเพลงคิวต่อไปรอไว้เลย
+                prefetchNextSongs();
+
+            } catch (error) {}
+        }
+
+        // ⚡ ฟังก์ชันแอบค้นหาคลิปล่วงหน้า (Zero Delay)
+        async function prefetchNextSongs() {
+            const autoPick = document.getElementById('autoPickFirst').checked;
+            if (!autoPick || currentQueue.length < 2) return;
+
+            // ค้นหาล่วงหน้าให้ 2 คิวถัดไป (index 1 และ 2)
+            for (let i = 1; i < Math.min(currentQueue.length, 3); i++) {
+                let item = currentQueue[i];
+                if (!assignedVideos[item.id]) {
+                    
+                    let directId = extractVideoID(item.song);
+                    if (directId) {
+                        assignedVideos[item.id] = { videoId: directId };
+                        renderUI(); 
+                        continue;
+                    }
+
+                    try {
+                        let res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(item.song)}&key=${YT_API_KEY}`);
+                        let data = await res.json();
+                        if (data.items && data.items.length > 0) {
+                            assignedVideos[item.id] = { videoId: data.items[0].id.videoId };
+                            renderUI(); // อัปเดตให้มีเครื่องหมายถูก
+                        }
+                    } catch (e) {}
+                }
             }
         }
 
-        // --- โหลดเพลงเข้า Player (รองรับทั้ง Direct Link และ Search) ---
+        // ⚡ โหลดเพลงคิวแรกลง Player (วิ่งตรง YT API)
         async function handleNewCurrentSong(songItem) {
-            if (!songItem) return;
-
-            if (currentPlayingSongId === songItem.id) {
-                return;
-            }
+            if (!songItem || !isDjReady) return; 
+            if (currentPlayingSongId === songItem.id) return;
 
             if (assignedVideos[songItem.id]) {
                 loadVideoToPlayer(assignedVideos[songItem.id].videoId, songItem.id);
                 return;
             }
 
-            // 💡 1. ถ้าสิ่งที่ส่งมาเป็นลิงก์ YouTube ให้ดึง Video ID ออกมาเล่นตรงๆ ทันที (โควตาฟรี 0 Units!)
             const directId = extractVideoID(songItem.song);
             if (directId) {
                 assignedVideos[songItem.id] = { videoId: directId };
@@ -670,21 +608,18 @@
                 return;
             }
 
-            // 💡 2. ถ้าเป็นชื่อเพลงปกติ ค่อยวิ่งไปค้นหาผ่าน YouTube Search API
             const autoPick = document.getElementById('autoPickFirst').checked;
-
             if (autoPick) {
                 try {
-                    const res = await fetch(`${GAS_API_URL}?action=searchYoutube&q=${encodeURIComponent(query)}`);
+                    // ⚡ วิ่งตรงหา YouTube API
+                    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(songItem.song)}&key=${YT_API_KEY}`);
                     const data = await res.json();
                     if (data.items && data.items.length > 0) {
                         const vid = data.items[0].id.videoId;
                         assignedVideos[songItem.id] = { videoId: vid };
                         loadVideoToPlayer(vid, songItem.id);
                     }
-                } catch (e) {
-                    console.error("Auto search failed", e);
-                }
+                } catch (e) {}
             }
         }
 
@@ -695,11 +630,14 @@
             
             document.getElementById('queueCount').innerText = currentQueue.length;
 
+            let startIndex = 0; 
+
             if (currentVipSong) {
                 noQueueMessage.classList.add('hidden');
                 currentSongBox.classList.remove('hidden');
                 document.getElementById('c_sender').innerText = currentVipSong.sender;
                 document.getElementById('c_song').innerText = currentVipSong.title;
+                startIndex = 0; 
             } else if (currentQueue.length === 0) {
                 noQueueMessage.classList.remove('hidden');
                 currentSongBox.classList.add('hidden');
@@ -708,35 +646,32 @@
             } else {
                 noQueueMessage.classList.add('hidden');
                 currentSongBox.classList.remove('hidden');
-
                 const current = currentQueue[0];
                 document.getElementById('c_sender').innerText = current.sender;
                 document.getElementById('c_song').innerText = current.song;
+                startIndex = 1; 
             }
 
             nextQueueContainer.innerHTML = '';
-            if (currentQueue.length > 1) {
-                for (let i = 1; i < currentQueue.length; i++) {
+            if (currentQueue.length > startIndex) {
+                for (let i = startIndex; i < currentQueue.length; i++) {
                     const item = currentQueue[i];
                     const isAssigned = assignedVideos[item.id];
                     const div = document.createElement('div');
                     div.className = "bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80 shadow-sm flex items-center justify-between gap-2";
-                    
                     const safeSong = item.song.replace(/'/g, "\\'");
                     
+                    const isNextUp = (i === 0 && currentVipSong) ? `<span class="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded ml-1 animate-pulse">คิวถัดไป!</span>` : '';
+
                     div.innerHTML = `
                         <div class="min-w-0 flex-grow pl-1">
-                            <p class="text-white font-medium text-xs truncate select-text">${item.song}</p>
+                            <p class="text-white font-medium text-xs truncate select-text">${item.song} ${isNextUp}</p>
                             <p class="text-gray-400 text-[10px] mt-0.5 truncate">โดย: <span class="text-blue-300">${item.sender}</span></p>
-                            ${isAssigned ? `<span class="inline-block mt-1 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">✓ เลือกคลิปแล้ว</span>` : ''}
+                            ${isAssigned ? `<span class="inline-block mt-1 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">✓ เตรียมโหลดรอแล้ว</span>` : ''}
                         </div>
                         <div class="flex items-center gap-1 flex-shrink-0">
-                            <button onclick="openSearchModal(currentQueue[${i}], '${safeSong}')" title="เลือกคลิปล่วงหน้า" class="bg-slate-700 hover:bg-slate-600 text-blue-300 p-1.5 rounded-lg text-xs active:scale-95">
-                                🔍
-                            </button>
-                            <button onclick="copyTextToClipboard('${safeSong}', this)" title="คัดลอกชื่อเพลง" class="bg-slate-700 hover:bg-slate-600 text-gray-300 p-1.5 rounded-lg text-xs active:scale-95">
-                                📋
-                            </button>
+                            <button onclick="openSearchModal(currentQueue[${i}], '${safeSong}')" title="เลือกคลิปล่วงหน้า" class="bg-slate-700 hover:bg-slate-600 text-blue-300 p-1.5 rounded-lg text-xs active:scale-95">🔍</button>
+                            <button onclick="copyTextToClipboard('${safeSong}', this)" title="คัดลอกชื่อเพลง" class="bg-slate-700 hover:bg-slate-600 text-gray-300 p-1.5 rounded-lg text-xs active:scale-95">📋</button>
                         </div>
                     `;
                     nextQueueContainer.appendChild(div);
@@ -746,8 +681,9 @@
             }
         }
 
-        // --- เปลี่ยนสถานะคิว ---
         function updateStatus(status) {
+            if (!isDjReady) return; 
+
             if (currentVipSong) {
                 currentVipSong = null;
                 currentPlayingSongId = null;
@@ -755,26 +691,17 @@
                 if (currentQueue.length > 0) {
                     handleNewCurrentSong(currentQueue[0]);
                 } else {
-                    document.getElementById('playerPlaceholder').classList.remove('hidden');
-                    if (ytPlayer && isPlayerReady && typeof ytPlayer.stopVideo === 'function') {
-                        ytPlayer.stopVideo();
-                    }
+                    playRandomBGM(); 
                 }
                 return;
             }
 
             if (currentQueue.length === 0) return;
+            if (status === 'skipped' && !confirm("แน่ใจหรือไม่ว่าจะ 'ข้าม' คิวนี้?")) return;
 
-            if (status === 'skipped') {
-                if (!confirm("แน่ใจหรือไม่ว่าจะ 'ข้าม' คิวนี้?")) return;
-            }
-
-            const finishedItem = currentQueue[0];
-            const finishedId = finishedItem.id;
-
+            const finishedId = currentQueue[0].id;
             processedSongIds.add(finishedId);
             delete assignedVideos[finishedId];
-
             currentQueue.shift();
             renderUI();
 
@@ -782,10 +709,7 @@
                 handleNewCurrentSong(currentQueue[0]);
             } else {
                 currentPlayingSongId = null;
-                document.getElementById('playerPlaceholder').classList.remove('hidden');
-                if (ytPlayer && isPlayerReady && typeof ytPlayer.stopVideo === 'function') {
-                    ytPlayer.stopVideo();
-                }
+                playRandomBGM(); 
             }
 
             syncStatusToBackend(finishedId, status);
@@ -793,36 +717,34 @@
 
         async function syncStatusToBackend(id, status) {
             document.getElementById('loadingIndicator').classList.remove('hidden');
-            try {
-                await fetch(`${GAS_API_URL}?action=updateStatus&id=${encodeURIComponent(id)}&status=${encodeURIComponent(status)}`, { 
-                    redirect: 'follow' 
-                });
-            } catch (error) {
-                console.warn("Background sync status failed:", error);
-            } finally {
-                document.getElementById('loadingIndicator').classList.add('hidden');
-            }
+            try { await fetch(`${GAS_API_URL}?action=updateStatus&id=${encodeURIComponent(id)}&status=${encodeURIComponent(status)}`, { redirect: 'follow' }); }
+            catch (error) {}
+            finally { document.getElementById('loadingIndicator').classList.add('hidden'); }
         }
 
-        // --- Utility ---
         function copyTextToClipboard(text, btn) {
             navigator.clipboard.writeText(text).then(() => {
-                const old = btn.innerText;
-                btn.innerText = "✓";
+                const old = btn.innerText; btn.innerText = "✓";
                 setTimeout(() => btn.innerText = old, 1200);
             });
         }
-
         function copyCurrentSongText() {
-            if (currentVipSong) navigator.clipboard.writeText(currentVipSong.title);
+            if (currentVipSong) navigator.clipboard.writeText(currentVipSong.title.replace("🎧 ออโต้ดีเจ: ", ""));
             else if (currentQueue.length > 0) navigator.clipboard.writeText(currentQueue[0].song);
         }
 
         function startApp() {
             initSettingsStorage();
             fetchTimeSettings();
+            
+            const autoPlay = document.getElementById('autoPlayNext').checked;
+            if (autoPlay) {
+                isDjReady = false; 
+                showDjQueueAlertModal(null, 0); 
+            }
+
             fetchQueue();
-            setInterval(fetchQueue, 3500);
+            setInterval(fetchQueue, 2500); 
         }
 
         window.onload = () => {
