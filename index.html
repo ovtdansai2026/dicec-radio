@@ -226,7 +226,6 @@
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbynRYFemd7P2tDOxjklQUPpwzrLJAAute9Lrpd8uRMyC9029qAfUvNEWpu-MXxWTso4/exec"; 
-        const YT_API_KEY = "AIzaSyCJVS9eE86ueVwYT7sVxnQgEvfGph-cskg";
 
         let currentQueue = [];
         let isVipMode = false;
@@ -676,7 +675,7 @@
 
             if (autoPick) {
                 try {
-                    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(songItem.song)}&key=${YT_API_KEY}`);
+                    const res = await fetch(`${GAS_API_URL}?action=searchYoutube&q=${encodeURIComponent(query)}`);
                     const data = await res.json();
                     if (data.items && data.items.length > 0) {
                         const vid = data.items[0].id.videoId;
