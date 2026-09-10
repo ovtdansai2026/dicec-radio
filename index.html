@@ -18,6 +18,7 @@
 </head>
 <body class="h-screen w-full flex flex-col overflow-hidden">
 
+    <!-- รหัสผ่าน Overlay -->
     <div id="passwordOverlay" class="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center z-[9999] p-4 select-none">
         <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-md text-center shadow-2xl border border-slate-700/50">
             <h2 class="text-2xl sm:text-3xl font-bold text-blue-400 mb-6 flex items-center justify-center gap-2">🔑 รหัสผ่านดีเจ</h2>
@@ -27,6 +28,7 @@
         </div>
     </div>
 
+    <!-- 📢 Modal แจ้งเตือนดีเจเตรียมตัว (มีระบบล็อกรอข้อมูลจริง) -->
     <div id="djQueueAlertModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[9500] hidden flex items-center justify-center p-4 select-none">
         <div class="glass-panel bg-slate-900/95 border border-amber-500/50 rounded-3xl w-full max-w-md p-6 text-center shadow-2xl">
             <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-500/40">🔊</div>
@@ -35,20 +37,26 @@
             
             <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 text-left mb-5 space-y-1">
                 <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
-                    <span>สถานะตอนเริ่ม:</span>
-                    <span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[11px]">รออยู่ <strong id="alertQueueCount" class="text-white">0</strong> คิว</span>
+                    <span>สถานะคิวเพลง:</span>
+                    <span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[11px]">รออยู่ <strong id="alertQueueCount" class="text-white">...</strong> คิว</span>
                 </div>
-                <h4 id="alertFirstSong" class="text-white font-bold text-sm sm:text-base truncate">-</h4>
-                <p class="text-xs text-blue-300">ขอโดย: <span id="alertFirstSender" class="text-gray-300">-</span></p>
+                <h4 id="alertFirstSong" class="text-white font-bold text-sm sm:text-base truncate">กำลังเชื่อมต่อดึงคิวล่าสุด...</h4>
+                <p class="text-xs text-blue-300">ขอโดย: <span id="alertFirstSender" class="text-gray-300">กรุณารอสักครู่</span></p>
             </div>
 
             <div class="flex flex-col gap-2.5">
-                <button onclick="confirmStartQueue()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">▶️ พร้อมแล้ว! เริ่มรันระบบเลย</button>
-                <button onclick="holdQueueForPrep()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-medium py-2.5 rounded-xl text-xs sm:text-sm active:scale-95 transition-all">⏸️ ขอเบาเสียงก่อน (พักคิวไว้ชั่วคราว)</button>
+                <button id="alertConfirmBtn" onclick="confirmStartQueue()" disabled class="w-full bg-slate-700 text-gray-400 font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed">
+                    <svg class="animate-spin h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    กำลังดึงข้อมูลคิวเพลง...
+                </button>
+                <button onclick="holdQueueForPrep()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-medium py-2.5 rounded-xl text-xs sm:text-sm active:scale-95 transition-all">
+                    ⏸️ ขอเบาเสียงก่อน (พักคิวไว้ชั่วคราว)
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- Modal ค้นหา YouTube -->
     <div id="searchModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9000] hidden flex items-center justify-center p-3 sm:p-6">
         <div class="glass-panel bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/60">
@@ -65,6 +73,7 @@
         </div>
     </div>
 
+    <!-- Header ด้านบน -->
     <header class="p-2 sm:p-3 bg-slate-900 border-b border-slate-700 flex flex-wrap justify-between items-center gap-2 shadow-lg z-10 select-none flex-shrink-0">
         <div class="flex items-center gap-2.5">
             <h1 class="text-base sm:text-xl font-bold text-blue-400">📻 ด่านซ้ายเรดิโอ</h1>
@@ -121,7 +130,6 @@
 
             <div id="currentSongBox" class="hidden flex-col gap-3 max-w-4xl mx-auto w-full">
                 
-                <!-- ข้อมูลเพลงปัจจุบัน -->
                 <div class="glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-700/80 shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div class="min-w-0 flex-grow">
                         <div class="flex items-center gap-2 mb-1">
@@ -136,7 +144,7 @@
                     </div>
                 </div>
 
-                <!-- 🎙️ กล่องข้อความอ่านออกอากาศหน้าไมค์ (สีทองเด่นชัด) -->
+                <!-- 🎙️ กล่องข้อความอ่านหน้าไมค์ -->
                 <div id="c_message_box" class="glass-panel p-3.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 flex items-start gap-3 shadow-lg">
                     <span class="text-2xl mt-0.5">🎙️</span>
                     <div class="min-w-0 flex-grow">
@@ -186,14 +194,12 @@
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbynRYFemd7P2tDOxjklQUPpwzrLJAAute9Lrpd8uRMyC9029qAfUvNEWpu-MXxWTso4/exec"; 
 
-        // 🥷 วิชานินจาซ่อนคีย์
         const _k1 = "AIzaSy";
         const _k2 = "C_b01jeHcJb";
         const _k3 = "MjQ52YUl79J";
         const _k4 = "goXhTgci60E";
         const YT_API_KEY = _k1 + _k2 + _k3 + _k4;
 
-        // 🏆 อภิมหาคลังเพลงฮิต
         const premiumBgmList = [
             "คู่คอง – ก้อง ห้วยไร่", "เชือกวิเศษ – LABANOON", "คำว่าฮักกัน มันเหี่ยถิ่มไส – มนต์แคน แก่นคูน",
             "ผู้สาวขาเลาะ – ลำไย ไหทองคำ", "จูบ (Remix) – ILLSLICK", "แพ้ทาง – LABANOON",
@@ -236,7 +242,7 @@
         let isPlayerReady = false;
 
         let isInitialLoad = true;
-        let isDjReady = true; 
+        let isDjReady = false; // 🔒 ล็อกเริ่มต้นไว้ก่อนเสมอ
 
         let currentPlayingSongId = null;
         let processedSongIds = new Set();
@@ -258,23 +264,38 @@
             autoPickFirstCb.addEventListener('change', () => localStorage.setItem('dj_autoPickFirst', autoPickFirstCb.checked));
         }
 
+        // 📢 แสดงข้อมูลคิวจริง และปลดล็อกปุ่มยืนยัน
         function showDjQueueAlertModal(firstSong, totalCount) {
+            const confirmBtn = document.getElementById('alertConfirmBtn');
             document.getElementById('alertQueueCount').innerText = totalCount;
+            
             if (firstSong) {
                 document.getElementById('alertFirstSong').innerText = firstSong.song;
                 document.getElementById('alertFirstSender').innerText = firstSong.sender;
+                confirmBtn.innerHTML = `▶️ พร้อมแล้ว! เริ่มเปิดเพลงคิวแรก (${totalCount} คิว)`;
             } else {
-                document.getElementById('alertFirstSong').innerText = "รอสุ่มเพลง (Auto-DJ)";
+                document.getElementById('alertFirstSong').innerText = "ไม่มีคิวรอ (จะเล่นเพลงสุ่ม Auto-DJ)";
                 document.getElementById('alertFirstSender').innerText = "ลิสต์เพลงฮิตพรีเมียม";
+                confirmBtn.innerHTML = "▶️ พร้อมแล้ว! เริ่มเล่นเพลงสุ่ม (BGM)";
             }
+
+            // 🔓 ปลดล็อกปุ่มให้กดได้
+            confirmBtn.disabled = false;
+            confirmBtn.className = "w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer";
+
             document.getElementById('djQueueAlertModal').classList.remove('hidden');
         }
 
         function confirmStartQueue() {
             document.getElementById('djQueueAlertModal').classList.add('hidden');
             isDjReady = true; 
-            if (currentQueue.length > 0) handleNewCurrentSong(currentQueue[0]);
-            else playRandomBGM(); 
+            
+            // 🎯 ตรงนี้คิวจริงโหลดเสร็จแล้ว 100% ถ้ามีเพลงเด็กเปิดเพลงเด็กทันที!
+            if (currentQueue.length > 0) {
+                handleNewCurrentSong(currentQueue[0]);
+            } else {
+                playRandomBGM(); 
+            }
         }
 
         function holdQueueForPrep() {
@@ -335,6 +356,7 @@
 
         function loadVideoToPlayer(videoId, songId = null) {
             if (!isDjReady || !videoId) return; 
+
             currentPlayingSongId = songId;
 
             document.getElementById('playerPlaceholder').classList.add('hidden');
@@ -543,8 +565,8 @@
             finally { document.getElementById('loadingIndicator').classList.add('hidden'); }
         }
 
-        // 🌟 ระบบดึงคิว และ แอบค้นหาเพลงล่วงหน้า (Pre-fetch)
-        async function fetchQueue() {
+        // 🌟 ดึงคิวเพลง + โหลดข้อมูลจริงให้ Modal
+        async function fetchQueue(isFirstRun = false) {
             if (isVipMode) return; 
             
             try {
@@ -558,6 +580,15 @@
                 const isNewFirstSong = data.length > 0 && (currentQueue.length === 0 || currentQueue[0].id !== data[0].id);
                 currentQueue = data;
                 
+                // 🔔 ถ้าเป็นการโหลดรอบแรก ให้ส่งข้อมูลจริงไปอัปเดตและปลดล็อกปุ่ม Modal ทันที!
+                if (isFirstRun || isInitialLoad) {
+                    isInitialLoad = false;
+                    const autoPlay = document.getElementById('autoPlayNext').checked;
+                    if (autoPlay && !isDjReady) {
+                        showDjQueueAlertModal(currentQueue.length > 0 ? currentQueue[0] : null, currentQueue.length);
+                    }
+                }
+
                 if (!isDjReady) {
                     renderUI();
                     return; 
@@ -571,10 +602,14 @@
                     playRandomBGM();
                 }
 
-                // แอบค้นหาเพลงคิวต่อไปรอไว้เลย
                 prefetchNextSongs();
 
-            } catch (error) {}
+            } catch (error) {
+                console.error("fetchQueue error:", error);
+                if (isFirstRun) {
+                    showDjQueueAlertModal(null, 0);
+                }
+            }
         }
 
         async function prefetchNextSongs() {
@@ -592,8 +627,8 @@
                     }
 
                     try {
-                        let res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(item.song)}&key=${YT_API_KEY}`);
-                        let data = await res.json();
+                        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(item.song)}&key=${YT_API_KEY}`);
+                        const data = await res.json();
                         if (data.items && data.items.length > 0) {
                             assignedVideos[item.id] = { videoId: data.items[0].id.videoId };
                             renderUI();
@@ -649,7 +684,6 @@
                 document.getElementById('c_sender').innerText = currentVipSong.sender;
                 document.getElementById('c_song').innerText = currentVipSong.title;
                 
-                // อัปเดตข้อความฝากถึง
                 if (currentVipSong.msg && currentVipSong.msg !== "-") {
                     msgBox.classList.remove('hidden');
                     document.getElementById('c_message').innerText = currentVipSong.msg;
@@ -670,7 +704,6 @@
                 document.getElementById('c_sender').innerText = current.sender;
                 document.getElementById('c_song').innerText = current.song;
 
-                // 🎙️ แสดงข้อความอ่านหน้าไมค์แบบเด่นชัด
                 if (current.msg && current.msg !== "-") {
                     msgBox.classList.remove('hidden');
                     document.getElementById('c_message').innerText = `"${current.msg}"`;
@@ -692,8 +725,6 @@
                     const safeSong = item.song.replace(/'/g, "\\'");
                     
                     const isNextUp = (i === 0 && currentVipSong) ? `<span class="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded ml-1 animate-pulse">คิวถัดไป!</span>` : '';
-                    
-                    // แสดงพรีวิวข้อความฝากถึงในแถบคิวด้านขวา
                     const hasMsg = (item.msg && item.msg !== "-") ? `<p class="text-amber-300 text-[10px] mt-0.5 truncate">💬 "${item.msg}"</p>` : '';
 
                     div.innerHTML = `
@@ -767,17 +798,21 @@
             else if (currentQueue.length > 0) navigator.clipboard.writeText(currentQueue[0].song);
         }
 
-        function startApp() {
+        async function startApp() {
             initSettingsStorage();
             fetchTimeSettings();
             
             const autoPlay = document.getElementById('autoPlayNext').checked;
             if (autoPlay) {
                 isDjReady = false; 
-                showDjQueueAlertModal(null, 0); 
+                // แสดง Modal รอ แต่ล็อกปุ่มไว้ก่อน
+                document.getElementById('djQueueAlertModal').classList.remove('hidden');
+            } else {
+                isDjReady = true;
             }
 
-            fetchQueue();
+            // 🚀 สั่งดึงคิวรอบแรกให้เสร็จสมบูรณ์ก่อนเริ่มระบบ
+            await fetchQueue(true);
             setInterval(fetchQueue, 2500); 
         }
 
