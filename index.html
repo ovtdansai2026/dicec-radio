@@ -28,7 +28,7 @@
         </div>
     </div>
 
-    <!-- 📢 Modal แจ้งเตือนดีเจเตรียมตัว (มีระบบล็อกรอข้อมูลจริง) -->
+    <!-- 📢 Modal แจ้งเตือนดีเจเตรียมตัว -->
     <div id="djQueueAlertModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[9500] hidden flex items-center justify-center p-4 select-none">
         <div class="glass-panel bg-slate-900/95 border border-amber-500/50 rounded-3xl w-full max-w-md p-6 text-center shadow-2xl">
             <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-500/40">🔊</div>
@@ -38,16 +38,15 @@
             <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 text-left mb-5 space-y-1">
                 <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
                     <span>สถานะคิวเพลง:</span>
-                    <span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[11px]">รออยู่ <strong id="alertQueueCount" class="text-white">...</strong> คิว</span>
+                    <span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[11px]">รออยู่ <strong id="alertQueueCount" class="text-white">0</strong> คิว</span>
                 </div>
-                <h4 id="alertFirstSong" class="text-white font-bold text-sm sm:text-base truncate">กำลังเชื่อมต่อดึงคิวล่าสุด...</h4>
-                <p class="text-xs text-blue-300">ขอโดย: <span id="alertFirstSender" class="text-gray-300">กรุณารอสักครู่</span></p>
+                <h4 id="alertFirstSong" class="text-white font-bold text-sm sm:text-base truncate">กำลังตรวจสอบคิว...</h4>
+                <p class="text-xs text-blue-300">ขอโดย: <span id="alertFirstSender" class="text-gray-300">-</span></p>
             </div>
 
             <div class="flex flex-col gap-2.5">
-                <button id="alertConfirmBtn" onclick="confirmStartQueue()" disabled class="w-full bg-slate-700 text-gray-400 font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed">
-                    <svg class="animate-spin h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                    กำลังดึงข้อมูลคิวเพลง...
+                <button id="alertConfirmBtn" onclick="confirmStartQueue()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                    ▶️ พร้อมแล้ว! เริ่มรันระบบเลย
                 </button>
                 <button onclick="holdQueueForPrep()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-medium py-2.5 rounded-xl text-xs sm:text-sm active:scale-95 transition-all">
                     ⏸️ ขอเบาเสียงก่อน (พักคิวไว้ชั่วคราว)
@@ -200,49 +199,35 @@
         const _k4 = "goXhTgci60E";
         const YT_API_KEY = _k1 + _k2 + _k3 + _k4;
 
+        // 🎵 ลิสต์สำรอง (Video IDs) ป้องกันกรณีค้นหาไม่เจอ
+        const fallbackPlaylist = [
+            "GJp5izApAlI", "2yUD--XAnJg", "6JbqGuX3yOo", 
+            "Hc4OrO4LRWw", "0iXj7Zkb3Ik", "zMciAtU4miE"
+        ];
+
+        // 🏆 คลังเพลงฮิตพรีเมียม
         const premiumBgmList = [
-            "คู่คอง – ก้อง ห้วยไร่", "เชือกวิเศษ – LABANOON", "คำว่าฮักกัน มันเหี่ยถิ่มไส – มนต์แคน แก่นคูน",
-            "ผู้สาวขาเลาะ – ลำไย ไหทองคำ", "จูบ (Remix) – ILLSLICK", "แพ้ทาง – LABANOON",
-            "ห้องนอน – Fridaynight to Sunday", "มหาลัยวัวชน – วงพัทลุง", "เลิกคุยทั้งอำเภอเพื่อเธอคนเดียว",
-            "กอดเสาเถียง – ปรีชา ปัดภัย", "ธารารัตน์ – YOUNGOHM", "วอนวัยรุ่น – มนต์แคน แก่นคูน",
-            "ทน – SPRITE x GUYGEEGEE", "ขอบใจเด้อ – ศาล สานศิลป์", "ดวงเดือน – โจอี้ ภูวศิษฐ์",
-            "ถ้าเธอรักใครคนหนึ่ง – INK WARUNTORN", "เสแสร้ง – Paper Planes", "รักควรมีสองคน – พร จันทพร",
-            "สิมาฮักหยังตอนนี้ – ต่าย อรทัย", "ทดไว้ในใจ – ต่าย อรทัย", "คู่ชีวิต – COCKTAIL",
-            "ทิ้งไว้กลางทาง – POTATO", "สองใจ – ดา เอ็นโดรฟิน", "ซ่อนกลิ่น – PALMY",
-            "วันหนึ่งฉันเดินเข้าป่า – Max Jenmana", "อาย – สิงโต นำโชค", "ภูมิแพ้กรุงเทพ – ป้าง นครินทร์",
-            "สิ่งของ – KLEAR", "ขัดใจ – COLORPITCH", "เธอ – COCKTAIL", "รบกวนมารักกัน – ทาทา ยัง",
-            "โปรดส่งใครมารักฉันที – Instinct", "เจ็บจนพอ – แว่นใหญ่", "ภาวนา – MEYOU",
-            "ดึงดัน – COCKTAIL x ตั๊ก ศิริพร", "วาฬเกยตื้น – GUNGUN", "ลงใจ – BOWKYLION",
-            "ฝนตกไหม – Three Man Down", "เลือกได้ไหม – Zaza", "คิดแต่ไม่ถึง – Tilly Birds",
-            "ถ้าเราเจอกันอีก – Tilly Birds", "พิง – นนท์ ธนนท์", "โต๊ะริม – นนท์ ธนนท์",
-            "เพื่อนเล่น ไม่เล่นเพื่อน – Tilly Birds", "วัดปะหล่ะ? – 4EVE", "ทรงอย่างแบด – Paper Planes",
-            "รักแท้ – NuNew", "พิจารณา – Musketeers", "นะหน้าทอง – โจอี้ ภูวศิษฐ์",
-            "กาลครั้งหนึ่ง – แสตมป์", "แผลในใจ – แอม เสาวลักษณ์", "พูดไม่คิด – Season Five",
-            "คนมีเสน่ห์ – ป้าง นครินทร์", "เรื่องที่ขอ – ลุลา", "อ้าว – อะตอม ชนกันต์",
-            "ทางของฝุ่น – อะตอม", "ดูดี – Polycat", "พบกันใหม่ – Polycat", "กรรม – ป้าง นครินทร์",
-            "ภาพจำ – ป๊อบ ปองกูล", "ติดตลก – โอ๊ต ปราโมทย์", "มีผลต่อหัวใจ – นนท์ ธนนท์",
-            "บอกตัวเอง – Room 39", "อยู่ตรงนี้ – พงษ์สิทธิ์ คำภีร์", "ก่อนฤดูฝน – The TOYS",
-            "หน้าหนาวที่แล้ว – The TOYS", "04:00 – The TOYS", "ลาลาลอย – The TOYS",
-            "หมอกหรือควัน – เบิร์ด ธงไชย", "คืนที่ดาวเต็มฟ้า – ปราโมทย์", "ใจนักเลง – พงษ์พัฒน์",
-            "เหนื่อยไหม – เบิร์ด ธงไชย", "ไม่ต่างกัน – 25hours", "ยินดีที่ไม่รู้จัก – 25hours",
-            "เที่ยงคืนสิบห้านาที – 25hours", "คำยินดี – KLEAR", "รักไม่ต้องการเวลา – KLEAR",
-            "แค่ได้คิดถึง – ญารินดา", "กุมภาพันธ์ – ปีเตอร์ คอร์ป", "สายตาหลอกกันไม่ได้ – INK WARUNTORN",
-            "ดีใจด้วยนะ – INK WARUNTORN", "ขอบใจนะ – แพรว คณิตกุล", "คนไม่จำเป็น – GETSUNOVA",
-            "ไกลแค่ไหน คือ ใกล้ – GETSUNOVA", "แตกต่างเหมือนกัน – GETSUNOVA", "ความเงียบที่ดังที่สุด",
-            "อยู่ต่อเลยได้ไหม – สิงโต นำโชค", "เขียนไว้ข้างเตียง – นันทิดา", "ขีดเส้นใต้ – กบ ทรงสิทธิ์",
-            "เติมใจให้กัน – ก้อง สหรัถ", "แอบดี – แสตมป์ อภิวัชร์", "ฝืนตัวเองไม่เป็น – นนท์ ธนนท์",
-            "ความเจ็บปวด – ปาล์มมี่", "อยากร้องดังๆ – ปาล์มมี่", "คิดถึง – PALMY",
-            "กะลาตาแตก – วงกางเกง", "ซมซาน – LOSO", "อะไรก็ยอม – LOSO", "ฝนตกที่หน้าต่าง – LOSO"
+            "คู่คอง ก้อง ห้วยไร่", "เชือกวิเศษ LABANOON", "คำว่าฮักกัน มันเหี่ยถิ่มไส มนต์แคน",
+            "ผู้สาวขาเลาะ ลำไย ไหทองคำ", "แพ้ทาง LABANOON", "ห้องนอน Fridaynight",
+            "มหาลัยวัวชน วงพัทลุง", "กอดเสาเถียง ปรีชา ปัดภัย", "ธารารัตน์ YOUNGOHM",
+            "วอนวัยรุ่น มนต์แคน", "ทน SPRITE", "ขอบใจเด้อ ศาล สานศิลป์", "ดวงเดือน โจอี้ ภูวศิษฐ์",
+            "เสแสร้ง Paper Planes", "คู่ชีวิต COCKTAIL", "ทิ้งไว้กลางทาง POTATO",
+            "สองใจ ดา เอ็นโดรฟิน", "ซ่อนกลิ่น PALMY", "วันหนึ่งฉันเดินเข้าป่า Max Jenmana",
+            "อาย สิงโต นำโชค", "ภูมิแพ้กรุงเทพ ป้าง นครินทร์", "สิ่งของ KLEAR",
+            "ขัดใจ COLORPITCH", "เธอ COCKTAIL", "ดึงดัน COCKTAIL", "วาฬเกยตื้น GUNGUN",
+            "ฝนตกไหม Three Man Down", "คิดแต่ไม่ถึง Tilly Birds", "โต๊ะริม นนท์ ธนนท์",
+            "เพื่อนเล่น ไม่เล่นเพื่อน Tilly Birds", "วัดปะหล่ะ 4EVE", "ทรงอย่างแบด Paper Planes",
+            "นะหน้าทอง โจอี้ ภูวศิษฐ์", "คนมีเสน่ห์ ป้าง นครินทร์", "อ้าว อะตอม ชนกันต์",
+            "ดูดี Polycat", "พบกันใหม่ Polycat", "ซมซาน LOSO", "ฝนตกที่หน้าต่าง LOSO"
         ];
 
         let currentQueue = [];
         let isVipMode = false;
-        
         let ytPlayer = null;
         let isPlayerReady = false;
 
         let isInitialLoad = true;
-        let isDjReady = false; // 🔒 ล็อกเริ่มต้นไว้ก่อนเสมอ
+        let isDjReady = false; 
 
         let currentPlayingSongId = null;
         let processedSongIds = new Set();
@@ -264,25 +249,15 @@
             autoPickFirstCb.addEventListener('change', () => localStorage.setItem('dj_autoPickFirst', autoPickFirstCb.checked));
         }
 
-        // 📢 แสดงข้อมูลคิวจริง และปลดล็อกปุ่มยืนยัน
         function showDjQueueAlertModal(firstSong, totalCount) {
-            const confirmBtn = document.getElementById('alertConfirmBtn');
             document.getElementById('alertQueueCount').innerText = totalCount;
-            
             if (firstSong) {
                 document.getElementById('alertFirstSong').innerText = firstSong.song;
                 document.getElementById('alertFirstSender').innerText = firstSong.sender;
-                confirmBtn.innerHTML = `▶️ พร้อมแล้ว! เริ่มเปิดเพลงคิวแรก (${totalCount} คิว)`;
             } else {
                 document.getElementById('alertFirstSong').innerText = "ไม่มีคิวรอ (จะเล่นเพลงสุ่ม Auto-DJ)";
                 document.getElementById('alertFirstSender').innerText = "ลิสต์เพลงฮิตพรีเมียม";
-                confirmBtn.innerHTML = "▶️ พร้อมแล้ว! เริ่มเล่นเพลงสุ่ม (BGM)";
             }
-
-            // 🔓 ปลดล็อกปุ่มให้กดได้
-            confirmBtn.disabled = false;
-            confirmBtn.className = "w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer";
-
             document.getElementById('djQueueAlertModal').classList.remove('hidden');
         }
 
@@ -290,7 +265,6 @@
             document.getElementById('djQueueAlertModal').classList.add('hidden');
             isDjReady = true; 
             
-            // 🎯 ตรงนี้คิวจริงโหลดเสร็จแล้ว 100% ถ้ามีเพลงเด็กเปิดเพลงเด็กทันที!
             if (currentQueue.length > 0) {
                 handleNewCurrentSong(currentQueue[0]);
             } else {
@@ -304,6 +278,7 @@
             toggleVipMode();
         }
 
+        // --- 🤖 ระบบเล่นเพลงสุ่ม (Auto-DJ) ปลอดภัยไร้ลูปสแปม ---
         async function playRandomBGM() {
             const autoPlay = document.getElementById('autoPlayNext').checked;
             if (!isDjReady || !autoPlay || isVipMode) return;
@@ -330,10 +305,17 @@
                     currentVipSong.videoId = vid;
                     loadVideoToPlayer(vid, null);
                 } else {
-                    setTimeout(playRandomBGM, 1000); 
+                    // 🛑 ถ้าเสิร์ชไม่เจอ หรือติดสิทธิ์ ให้ดึงเพลงสำรองมาเล่นทันที (ห้าม setTimeout วนลูปเด็ดขาด!)
+                    console.warn("YouTube API search failed, using fallback video ID.");
+                    const fallbackVid = fallbackPlaylist[Math.floor(Math.random() * fallbackPlaylist.length)];
+                    currentVipSong.videoId = fallbackVid;
+                    loadVideoToPlayer(fallbackVid, null);
                 }
             } catch (e) {
-                console.error("Auto-DJ search failed", e);
+                console.error("Auto-DJ network error, using fallback video ID:", e);
+                const fallbackVid = fallbackPlaylist[Math.floor(Math.random() * fallbackPlaylist.length)];
+                currentVipSong.videoId = fallbackVid;
+                loadVideoToPlayer(fallbackVid, null);
             }
         }
 
@@ -443,6 +425,7 @@
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
+        // 🔍 ค้นหาเพลงด้วยมือ (แสดง Error ชัดเจนถ้า API ติดปัญหา)
         async function executeSearch() {
             const query = document.getElementById('modalSearchInput').value.trim();
             const container = document.getElementById('searchResultsContainer');
@@ -459,6 +442,15 @@
             try {
                 const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&q=${encodeURIComponent(query)}&key=${YT_API_KEY}`);
                 const data = await res.json();
+
+                // 🚨 ตรวจจับข้อผิดพลาดของ Google API ชัดเจน
+                if (data.error) {
+                    container.innerHTML = `<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-xs">
+                        <strong>เกิดข้อผิดพลาดจาก YouTube API:</strong><br>
+                        ${data.error.message || 'รหัสข้อผิดพลาด ' + data.error.code}
+                    </div>`;
+                    return;
+                }
 
                 if (!data.items || data.items.length === 0) {
                     container.innerHTML = `<p class="text-center text-gray-400 py-6">ไม่พบผลการค้นหา ลองพิมพ์ชื่อเพลงอื่นดูครับ</p>`;
@@ -565,8 +557,8 @@
             finally { document.getElementById('loadingIndicator').classList.add('hidden'); }
         }
 
-        // 🌟 ดึงคิวเพลง + โหลดข้อมูลจริงให้ Modal
-        async function fetchQueue(isFirstRun = false) {
+        // 🌟 ดึงคิวเพลง (ไม่มี Timeout แช่แข็งหน้าจอ)
+        async function fetchQueue() {
             if (isVipMode) return; 
             
             try {
@@ -580,8 +572,8 @@
                 const isNewFirstSong = data.length > 0 && (currentQueue.length === 0 || currentQueue[0].id !== data[0].id);
                 currentQueue = data;
                 
-                // 🔔 ถ้าเป็นการโหลดรอบแรก ให้ส่งข้อมูลจริงไปอัปเดตและปลดล็อกปุ่ม Modal ทันที!
-                if (isFirstRun || isInitialLoad) {
+                // อัปเดตข้อมูลเข้า Modal
+                if (isInitialLoad) {
                     isInitialLoad = false;
                     const autoPlay = document.getElementById('autoPlayNext').checked;
                     if (autoPlay && !isDjReady) {
@@ -602,39 +594,8 @@
                     playRandomBGM();
                 }
 
-                prefetchNextSongs();
-
             } catch (error) {
-                console.error("fetchQueue error:", error);
-                if (isFirstRun) {
-                    showDjQueueAlertModal(null, 0);
-                }
-            }
-        }
-
-        async function prefetchNextSongs() {
-            const autoPick = document.getElementById('autoPickFirst').checked;
-            if (!autoPick || currentQueue.length < 2) return;
-
-            for (let i = 1; i < Math.min(currentQueue.length, 3); i++) {
-                let item = currentQueue[i];
-                if (!assignedVideos[item.id]) {
-                    let directId = extractVideoID(item.song);
-                    if (directId) {
-                        assignedVideos[item.id] = { videoId: directId };
-                        renderUI(); 
-                        continue;
-                    }
-
-                    try {
-                        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&q=${encodeURIComponent(item.song)}&key=${YT_API_KEY}`);
-                        const data = await res.json();
-                        if (data.items && data.items.length > 0) {
-                            assignedVideos[item.id] = { videoId: data.items[0].id.videoId };
-                            renderUI();
-                        }
-                    } catch (e) {}
-                }
+                console.error("fetchQueue network error:", error);
             }
         }
 
@@ -663,8 +624,12 @@
                         const vid = data.items[0].id.videoId;
                         assignedVideos[songItem.id] = { videoId: vid };
                         loadVideoToPlayer(vid, songItem.id);
+                    } else {
+                        console.warn("Auto-pick search yielded no results for:", songItem.song);
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error("Auto-pick search network error:", e);
+                }
             }
         }
 
@@ -732,7 +697,7 @@
                             <p class="text-white font-medium text-xs truncate select-text">${item.song} ${isNextUp}</p>
                             <p class="text-gray-400 text-[10px] mt-0.5 truncate">โดย: <span class="text-blue-300">${item.sender}</span></p>
                             ${hasMsg}
-                            ${isAssigned ? `<span class="inline-block mt-1 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">✓ เตรียมโหลดรอแล้ว</span>` : ''}
+                            ${isAssigned ? `<span class="inline-block mt-1 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">✓ เตรียมคลิปแล้ว</span>` : ''}
                         </div>
                         <div class="flex items-center gap-1 flex-shrink-0">
                             <button onclick="openSearchModal(currentQueue[${i}], '${safeSong}')" title="เลือกคลิปล่วงหน้า" class="bg-slate-700 hover:bg-slate-600 text-blue-300 p-1.5 rounded-lg text-xs active:scale-95">🔍</button>
@@ -798,21 +763,20 @@
             else if (currentQueue.length > 0) navigator.clipboard.writeText(currentQueue[0].song);
         }
 
-        async function startApp() {
+        function startApp() {
             initSettingsStorage();
             fetchTimeSettings();
             
             const autoPlay = document.getElementById('autoPlayNext').checked;
             if (autoPlay) {
                 isDjReady = false; 
-                // แสดง Modal รอ แต่ล็อกปุ่มไว้ก่อน
-                document.getElementById('djQueueAlertModal').classList.remove('hidden');
+                showDjQueueAlertModal(null, 0); 
             } else {
                 isDjReady = true;
             }
 
-            // 🚀 สั่งดึงคิวรอบแรกให้เสร็จสมบูรณ์ก่อนเริ่มระบบ
-            await fetchQueue(true);
+            // 🚀 เรียกคิวแบบไม่บล็อกหน้าจอ
+            fetchQueue();
             setInterval(fetchQueue, 2500); 
         }
 
