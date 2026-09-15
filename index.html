@@ -254,7 +254,8 @@
         let isDjReady = false; 
 
         let currentPlayingSongId = null;
-        let processedSongIds = new Set();
+        // 🛑 บัญชีดำถาวร: เพลงไหนเล่นแล้ว จำไว้ตลอดไป ไม่มีวันดีดกลับมาเล่นซ้ำเด็ดขาด!
+		let playedHistoryIds = new Set();
         let isTransitioningSong = false;
 
         let currentVipSong = null;
@@ -628,22 +629,17 @@
             }
         }
 
-        // 🌟 ดึงคิวเพลง + ส่งข้อมูลจริงให้ Modal
-        async function fetchQueue(isFirstRun = false) {
-            if (isVipMode) return; 
-            
+		async function fetchQueue(isFirstRun = false) {
             try {
-                const response = await fetch(`${GAS_API_URL}?action=getQueue`, { redirect: 'follow' });
+                const response = await fetch(`${GAS_API_URL}?action=getQueue&_t=${Date.now()}`, { redirect: 'follow' });
                 const rawData = await response.json();
                 
-                const data = Array.isArray(rawData) ? rawData.filter(item => !processedSongIds.has(item.id)) : [];
-                const currentSheetIds = new Set(data.map(item => item.id));
-                processedSongIds.forEach(id => { if (!currentSheetIds.has(id)) processedSongIds.delete(id); });
+                // 🛑 กรองทิ้งทันที: ถ้ามีเพลงไหนที่เคยเล่นไปแล้วในเซสชั่นนี้ ห้ามหลุดเข้ามาในคิวเด็ดขาด!
+                const data = Array.isArray(rawData) ? rawData.filter(item => !playedHistoryIds.has(item.id)) : [];
 
                 const isNewFirstSong = data.length > 0 && (currentQueue.length === 0 || currentQueue[0].id !== data[0].id);
                 currentQueue = data;
                 
-                // 🔔 ถ้าเป็นการโหลดรอบแรก ให้ส่งข้อมูลจริงไปอัปเดตและปลดล็อกปุ่ม Modal ทันที!
                 if (isFirstRun || isInitialLoad) {
                     isInitialLoad = false;
                     const autoPlay = document.getElementById('autoPlayNext').checked;
@@ -652,12 +648,13 @@
                     }
                 }
 
-                if (!isDjReady) {
-                    renderUI();
-                    return; 
-                }
-
                 renderUI();
+
+                if (!isDjReady) return; 
+
+                if (isVipMode || (currentVipSong && !currentVipSong.isBGM)) {
+                    return;
+                }
 
                 if (isNewFirstSong && (!currentVipSong || !currentVipSong.isBGM)) {
                     handleNewCurrentSong(currentQueue[0]);
@@ -667,10 +664,6 @@
 
             } catch (error) {
                 console.error("fetchQueue error:", error);
-                if (isFirstRun || isInitialLoad) {
-                    isInitialLoad = false;
-                    showDjQueueAlertModal(null, 0);
-                }
             }
         }
 
@@ -800,10 +793,10 @@
             if (status === 'skipped' && !confirm("แน่ใจหรือไม่ว่าจะ 'ข้าม' คิวนี้?")) return;
 
             const finishedId = currentQueue[0].id;
-            processedSongIds.add(finishedId);
-            delete assignedVideos[finishedId];
-            currentQueue.shift();
-            renderUI();
+			playedHistoryIds.add(finishedId); // 🛑 ใส่ลงบัญชีดำทันที
+			delete assignedVideos[finishedId];
+			currentQueue.shift();
+			renderUI();
 
             if (currentQueue.length > 0) {
                 handleNewCurrentSong(currentQueue[0]);
