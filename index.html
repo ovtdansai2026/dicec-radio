@@ -28,7 +28,7 @@
         </div>
     </div>
 
-    <!-- 📢 Modal แจ้งเตือนดีเจเตรียมตัว (ระบบล็อกรอข้อมูลจริง ไม่มโน 0 คิว) -->
+    <!-- 📢 Modal แจ้งเตือนดีเจเตรียมตัว (เด้งทันทีใน 0 วินาทีแรก ไม่ต้องรอเน็ต) -->
     <div id="djQueueAlertModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[9500] hidden flex items-center justify-center p-4 select-none">
         <div class="glass-panel bg-slate-900/95 border border-amber-500/50 rounded-3xl w-full max-w-md p-6 text-center shadow-2xl">
             <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-500/40">🔊</div>
@@ -41,14 +41,13 @@
                     <span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[11px]">รออยู่ <strong id="alertQueueCount" class="text-white">...</strong> คิว</span>
                 </div>
                 <h4 id="alertFirstSong" class="text-white font-bold text-sm sm:text-base truncate">กำลังเชื่อมต่อดึงคิวล่าสุด...</h4>
-                <p class="text-xs text-blue-300">ขอโดย: <span id="alertFirstSender" class="text-gray-300">กรุณารอสักครู่ กำลังโหลดข้อมูล</span></p>
+                <p class="text-xs text-blue-300">ขอโดย: <span id="alertFirstSender" class="text-gray-300">กรุณารอสักครู่</span></p>
             </div>
 
             <div class="flex flex-col gap-2.5">
-                <!-- ปุ่มเริ่มต้นจะถูก disabled ล็อกไว้เสมอจนกว่าข้อมูลจะมาถึง -->
                 <button id="alertConfirmBtn" onclick="confirmStartQueue()" disabled class="w-full bg-slate-700 text-gray-400 font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-60">
                     <svg class="animate-spin h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                    กำลังรอข้อมูลคิวจากชีต...
+                    กำลังดึงข้อมูลคิวเพลง...
                 </button>
                 <button onclick="holdQueueForPrep()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-medium py-2.5 rounded-xl text-xs sm:text-sm active:scale-95 transition-all">
                     ⏸️ ขอเบาเสียงก่อน (พักคิวไว้ชั่วคราว)
@@ -96,7 +95,6 @@
                 <span class="text-gray-300">เลือกคลิปแรกออโต้</span>
             </label>
             
-            <!-- ⏰ แผงตั้งค่าเวลาทำการ และ ดีเลย์คูลดาวน์ ดึงจากชีต -->
             <div class="flex items-center gap-1.5 bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-gray-300">
                 <div class="flex items-center space-x-1">
                     <span>เวลา:</span>
@@ -119,7 +117,7 @@
         <main class="w-full sm:w-[65%] md:w-[70%] h-full flex flex-col p-3 sm:p-4 bg-[#0f172a] border-b sm:border-b-0 border-slate-700 overflow-y-auto custom-scrollbar">
             
             <div id="vipBanner" class="hidden mb-3 p-3 bg-amber-500/20 border border-amber-500/50 rounded-2xl flex justify-between items-center text-amber-300 animate-pulse text-xs sm:text-sm">
-                <span>🛑 <strong>เปิดโหมด VIP / หยุดรันคิวอยู่:</strong> คิวเพลงของนักเรียนถูกพักไว้ชั่วคราว</span>
+                <span>🛑 <strong>เปิดโหมด VIP / พักคิวอยู่:</strong> คิวเพลงของนักเรียนจะรอในแถบขวา ดีเจเปิดเพลงอิสระได้ตามสบาย</span>
                 <button onclick="toggleVipMode()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1 rounded-xl text-xs">กลับสู่คิวปกติ</button>
             </div>
 
@@ -147,7 +145,6 @@
                     </div>
                 </div>
 
-                <!-- 🎙️ กล่องข้อความอ่านหน้าไมค์ -->
                 <div id="c_message_box" class="glass-panel p-3.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 flex items-start gap-3 shadow-lg">
                     <span class="text-2xl mt-0.5">🎙️</span>
                     <div class="min-w-0 flex-grow">
@@ -160,7 +157,6 @@
                     </div>
                 </div>
 
-                <!-- YouTube Player Wrapper -->
                 <div class="glass-panel rounded-2xl overflow-hidden border border-slate-700 shadow-2xl relative bg-black aspect-video w-full max-h-[360px] flex items-center justify-center">
                     <div id="ytPlayerContainer" class="w-full h-full flex items-center justify-center"></div>
                     <div id="playerPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-gray-400 p-4 text-center pointer-events-none">
@@ -197,14 +193,12 @@
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbynRYFemd7P2tDOxjklQUPpwzrLJAAute9Lrpd8uRMyC9029qAfUvNEWpu-MXxWTso4/exec"; 
 
-        // 🥷 กุญแจหลัก 1
         const _k1 = "AIzaSy";
         const _k2 = "C_b01jeHcJb";
         const _k3 = "MjQ52YUl79J";
         const _k4 = "goXhTgci60E";
         const KEY_1 = _k1 + _k2 + _k3 + _k4;
 
-        // 🥷 กุญแจสำรอง 2
         const _b1 = "AIzaSyAb1w_";
         const _b2 = "A6SkvUfoAkq";
         const _b3 = "f8P_3yFkNN_";
@@ -214,22 +208,14 @@
         let activeKeyIndex = 0;
         const API_KEYS = [KEY_1, KEY_2];
 
-        function getActiveKey() {
-            return API_KEYS[activeKeyIndex];
-        }
+        function getActiveKey() { return API_KEYS[activeKeyIndex]; }
+        function switchKey() { activeKeyIndex = (activeKeyIndex + 1) % API_KEYS.length; }
 
-        function switchKey() {
-            activeKeyIndex = (activeKeyIndex + 1) % API_KEYS.length;
-            console.warn("🔄 สลับไปใช้ YouTube API Key ตัวที่:", activeKeyIndex + 1);
-        }
-
-        // 🎵 ลิสต์สำรอง (Video IDs) ป้องกันกรณีค้นหาไม่เจอ (ใช้โควตา 0 Units ตลอดกาล)
         const fallbackPlaylist = [
             "GJp5izApAlI", "2yUD--XAnJg", "6JbqGuX3yOo", 
             "Hc4OrO4LRWw", "0iXj7Zkb3Ik", "zMciAtU4miE"
         ];
 
-        // 🏆 คลังเพลงฮิตพรีเมียม
         const premiumBgmList = [
             "คู่คอง ก้อง ห้วยไร่", "เชือกวิเศษ LABANOON", "คำว่าฮักกัน มันเหี่ยถิ่มไส มนต์แคน",
             "ผู้สาวขาเลาะ ลำไย ไหทองคำ", "แพ้ทาง LABANOON", "ห้องนอน Fridaynight",
@@ -253,9 +239,11 @@
         let isInitialLoad = true;
         let isDjReady = false; 
 
+        // 🛑 ระบบกันรถชนกัน (Chained Polling Lock)
+        let isPollingQueue = false;
+
         let currentPlayingSongId = null;
-        // 🛑 บัญชีดำถาวร: เพลงไหนเล่นแล้ว จำไว้ตลอดไป ไม่มีวันดีดกลับมาเล่นซ้ำเด็ดขาด!
-		let playedHistoryIds = new Set();
+        let playedHistoryIds = new Set();
         let isTransitioningSong = false;
 
         let currentVipSong = null;
@@ -274,41 +262,21 @@
             autoPickFirstCb.addEventListener('change', () => localStorage.setItem('dj_autoPickFirst', autoPickFirstCb.checked));
         }
 
-        // 🔒 แสดงหน้าต่าง Modal ในสถานะ "กำลังโหลดรอข้อมูลจากชีต" (ปุ่มจะถูกล็อกกดไม่ได้)
-        function setModalLoadingState() {
-            const modal = document.getElementById('djQueueAlertModal');
-            const confirmBtn = document.getElementById('alertConfirmBtn');
-            
-            document.getElementById('alertQueueCount').innerText = "...";
-            document.getElementById('alertFirstSong').innerText = "กำลังเชื่อมต่อดึงคิวล่าสุด...";
-            document.getElementById('alertFirstSender').innerText = "กรุณารอสักครู่ กำลังโหลดข้อมูลจากชีต";
-
-            confirmBtn.disabled = true;
-            confirmBtn.className = "w-full bg-slate-700 text-gray-400 font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-60";
-            confirmBtn.innerHTML = `
-                <svg class="animate-spin h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                กำลังรอข้อมูลคิวจากชีต...
-            `;
-            modal.classList.remove('hidden');
-        }
-
-        // 🔓 แสดงข้อมูลจริงที่ดึงได้จากชีต และปลดล็อกปุ่มให้กดเริ่มได้
         function showDjQueueAlertModal(firstSong, totalCount) {
-            const confirmBtn = document.getElementById('alertConfirmBtn');
             document.getElementById('alertQueueCount').innerText = totalCount;
-            
             if (firstSong && totalCount > 0) {
                 document.getElementById('alertFirstSong').innerText = firstSong.song;
                 document.getElementById('alertFirstSender').innerText = firstSong.sender;
-                confirmBtn.innerHTML = `▶️ พร้อมแล้ว! เริ่มเปิดเพลงคิวแรก (${totalCount} คิวรออยู่)`;
+                document.getElementById('alertConfirmBtn').innerHTML = `▶️ พร้อมแล้ว! เริ่มเปิดเพลงคิวแรก (${totalCount} คิวรออยู่)`;
             } else {
                 document.getElementById('alertFirstSong').innerText = "ไม่มีคิวรอ (จะเล่นเพลงสุ่ม Auto-DJ)";
                 document.getElementById('alertFirstSender').innerText = "ลิสต์เพลงฮิตพรีเมียม";
-                confirmBtn.innerHTML = "▶️ พร้อมแล้ว! เริ่มเล่นเพลงสุ่ม (BGM)";
+                document.getElementById('alertConfirmBtn').innerHTML = "▶️ พร้อมแล้ว! เริ่มเล่นเพลงสุ่ม (BGM)";
             }
 
+            const confirmBtn = document.getElementById('alertConfirmBtn');
             confirmBtn.disabled = false;
-            confirmBtn.className = "w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer";
+            confirmBtn.className = "w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer opacity-100";
 
             document.getElementById('djQueueAlertModal').classList.remove('hidden');
         }
@@ -317,7 +285,6 @@
             document.getElementById('djQueueAlertModal').classList.add('hidden');
             isDjReady = true; 
             
-            // 🎯 ข้อมูลจริงมาแล้ว 100% ถ้ามีคิวนักเรียนเปิดเพลงนักเรียนทันที ไม่ไปสุ่ม!
             if (currentQueue.length > 0) {
                 handleNewCurrentSong(currentQueue[0]);
             } else {
@@ -329,6 +296,24 @@
             document.getElementById('djQueueAlertModal').classList.add('hidden');
             isDjReady = true; 
             toggleVipMode();
+        }
+
+        function toggleVipMode() {
+            isVipMode = !isVipMode;
+            const banner = document.getElementById('vipBanner');
+            const dot = document.getElementById('vipDot');
+            const btnText = document.getElementById('vipBtnText');
+
+            if (isVipMode) {
+                banner.classList.remove('hidden');
+                dot.className = "w-2 h-2 rounded-full bg-amber-400";
+                btnText.innerText = "สถานะ: ⏸️ พักคิว (โหมด VIP)";
+            } else {
+                banner.classList.add('hidden');
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                btnText.innerText = "สถานะ: รันคิวปกติ";
+            }
+            fetchQueue();
         }
 
         async function fetchYouTubeSearch(query, maxResults = 1) {
@@ -348,7 +333,6 @@
                 }
                 return data;
             } catch (err) {
-                console.error("Fetch YouTube Error:", err);
                 return null;
             }
         }
@@ -377,7 +361,6 @@
                 currentVipSong.videoId = vid;
                 loadVideoToPlayer(vid, null);
             } else {
-                console.warn("Search yielded no video, playing guaranteed fallback ID.");
                 const fallbackVid = fallbackPlaylist[Math.floor(Math.random() * fallbackPlaylist.length)];
                 currentVipSong.videoId = fallbackVid;
                 loadVideoToPlayer(fallbackVid, null);
@@ -411,7 +394,7 @@
 
             if (ytPlayer && isPlayerReady && typeof ytPlayer.loadVideoById === 'function') {
                 try { ytPlayer.loadVideoById(videoId); return; } 
-                catch (err) { console.warn("Error using existing player:", err); }
+                catch (err) {}
             }
             mountYouTubePlayer(videoId);
         }
@@ -444,24 +427,6 @@
             } else {
                 document.getElementById('pwdError').classList.remove('hidden');
                 document.getElementById('pwdInput').value = '';
-            }
-        }
-
-        function toggleVipMode() {
-            isVipMode = !isVipMode;
-            const banner = document.getElementById('vipBanner');
-            const dot = document.getElementById('vipDot');
-            const btnText = document.getElementById('vipBtnText');
-
-            if (isVipMode) {
-                banner.classList.remove('hidden');
-                dot.className = "w-2 h-2 rounded-full bg-amber-400";
-                btnText.innerText = "สถานะ: ⏸️ พักคิว (โหมด VIP)";
-            } else {
-                banner.classList.add('hidden');
-                dot.className = "w-2 h-2 rounded-full bg-emerald-400";
-                btnText.innerText = "สถานะ: รันคิวปกติ";
-                fetchQueue();
             }
         }
 
@@ -504,19 +469,7 @@
 
             const data = await fetchYouTubeSearch(query, 5);
 
-            if (!data) {
-                container.innerHTML = `<p class="text-center text-red-400 py-4">เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่</p>`;
-                return;
-            }
-
-            if (data.error) {
-                container.innerHTML = `<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-xs">
-                    <strong>ข้อผิดพลาดจาก YouTube:</strong> ${data.error.message}
-                </div>`;
-                return;
-            }
-
-            if (!data.items || data.items.length === 0) {
+            if (!data || !data.items || data.items.length === 0) {
                 container.innerHTML = `<p class="text-center text-gray-400 py-6">ไม่พบผลการค้นหา ลองพิมพ์ชื่อเพลงอื่นดูครับ</p>`;
                 return;
             }
@@ -566,22 +519,29 @@
             renderUI();
         }
 
-        // ⏰ ดึงเวลาทำการและดีเลย์จากชีต (แบบชัวร์ 100% มี Fallback)
+        // ⚡ ดึงเวลาทำการ (แสดงผลทันทีจากแคชเครื่อง ไม่หน่วงหน้าจอ)
         async function fetchTimeSettings() {
+            const cachedOpen = localStorage.getItem('cached_openTime') || "12:30";
+            const cachedClose = localStorage.getItem('cached_closeTime') || "13:25";
+            const cachedCooldown = localStorage.getItem('cached_cooldown') || "2";
+
+            document.getElementById('openTime').value = cachedOpen;
+            document.getElementById('closeTime').value = cachedClose;
+            document.getElementById('cooldown').value = cachedCooldown;
+
             try {
-                const response = await fetch(`${GAS_API_URL}?action=getTimeSettings`, { redirect: 'follow' });
+                const response = await fetch(`${GAS_API_URL}?action=getTimeSettings&_t=${Date.now()}`, { redirect: 'follow' });
                 const data = await response.json();
                 if (data) {
-                    document.getElementById('openTime').value = data.openTime || "12:30";
-                    document.getElementById('closeTime').value = data.closeTime || "13:25";
-                    document.getElementById('cooldown').value = data.cooldownMinutes || "2";
+                    document.getElementById('openTime').value = data.openTime || cachedOpen;
+                    document.getElementById('closeTime').value = data.closeTime || cachedClose;
+                    document.getElementById('cooldown').value = data.cooldownMinutes || cachedCooldown;
+
+                    localStorage.setItem('cached_openTime', data.openTime || cachedOpen);
+                    localStorage.setItem('cached_closeTime', data.closeTime || cachedClose);
+                    localStorage.setItem('cached_cooldown', data.cooldownMinutes || cachedCooldown);
                 }
-            } catch (error) {
-                console.error("Error fetching settings:", error);
-                if (!document.getElementById('openTime').value) document.getElementById('openTime').value = "12:30";
-                if (!document.getElementById('closeTime').value) document.getElementById('closeTime').value = "13:25";
-                if (!document.getElementById('cooldown').value) document.getElementById('cooldown').value = "2";
-            }
+            } catch (error) {}
         }
 
         function validateAndFormatTime(value) {
@@ -619,9 +579,9 @@
             document.getElementById('loadingIndicator').classList.remove('hidden');
             
             try {
-                const response = await fetch(`${GAS_API_URL}?action=updateTimeSettings&openTime=${encodeURIComponent(openTime)}&closeTime=${encodeURIComponent(closeTime)}&cooldownMinutes=${cooldown}`, { redirect: 'follow' });
+                const response = await fetch(`${GAS_API_URL}?action=updateTimeSettings&openTime=${encodeURIComponent(openTime)}&closeTime=${encodeURIComponent(closeTime)}&cooldownMinutes=${cooldown}&_t=${Date.now()}`, { redirect: 'follow' });
                 const data = await response.json();
-                if (data.success) alert("บันทึกการตั้งค่าเรียบร้อยแล้ว\n- เวลาทำการ: " + openTime + " - " + closeTime + " น.\n- ดีเลย์การขอเพลง: " + cooldown + " นาที");
+                if (data.success) alert("บันทึกการตั้งค่าเรียบร้อยแล้ว");
             } catch (error) {
                 alert("เกิดข้อผิดพลาดในการบันทึก");
             } finally { 
@@ -629,17 +589,19 @@
             }
         }
 
-		async function fetchQueue(isFirstRun = false) {
+        // 🌟 ระบบดึงคิวเพลงแบบ Chained Request (ป้องกันรถชนกัน ไม่ค้าง 30 วิแน่นอน)
+        async function fetchQueue(isFirstRun = false) {
             try {
                 const response = await fetch(`${GAS_API_URL}?action=getQueue&_t=${Date.now()}`, { redirect: 'follow' });
                 const rawData = await response.json();
                 
-                // 🛑 กรองทิ้งทันที: ถ้ามีเพลงไหนที่เคยเล่นไปแล้วในเซสชั่นนี้ ห้ามหลุดเข้ามาในคิวเด็ดขาด!
+                // กรองเพลงที่เคยเล่นไปแล้วในเซสชั่นนี้ออกอย่างเด็ดขาด
                 const data = Array.isArray(rawData) ? rawData.filter(item => !playedHistoryIds.has(item.id)) : [];
 
                 const isNewFirstSong = data.length > 0 && (currentQueue.length === 0 || currentQueue[0].id !== data[0].id);
                 currentQueue = data;
                 
+                // อัปเดตข้อมูลเข้า Modal ทันที
                 if (isFirstRun || isInitialLoad) {
                     isInitialLoad = false;
                     const autoPlay = document.getElementById('autoPlayNext').checked;
@@ -664,6 +626,22 @@
 
             } catch (error) {
                 console.error("fetchQueue error:", error);
+                if (isFirstRun || isInitialLoad) {
+                    isInitialLoad = false;
+                    showDjQueueAlertModal(null, 0);
+                }
+            }
+        }
+
+        // 🔄 ระบบดึงคิวต่อเนื่องแบบไม่ชนกัน (Chained Polling)
+        async function startChainedPolling() {
+            if (isPollingQueue) return;
+            isPollingQueue = true;
+            try {
+                await fetchQueue();
+            } finally {
+                isPollingQueue = false;
+                setTimeout(startChainedPolling, 2500); // รอให้เสร็จรอบก่อน ค่อยนับ 2.5 วิแล้วส่งรอบใหม่
             }
         }
 
@@ -690,8 +668,6 @@
                     const vid = data.items[0].id.videoId;
                     assignedVideos[songItem.id] = { videoId: vid };
                     loadVideoToPlayer(vid, songItem.id);
-                } else {
-                    console.warn("Auto-pick yielded no results for:", songItem.song);
                 }
             }
         }
@@ -793,10 +769,10 @@
             if (status === 'skipped' && !confirm("แน่ใจหรือไม่ว่าจะ 'ข้าม' คิวนี้?")) return;
 
             const finishedId = currentQueue[0].id;
-			playedHistoryIds.add(finishedId); // 🛑 ใส่ลงบัญชีดำทันที
-			delete assignedVideos[finishedId];
-			currentQueue.shift();
-			renderUI();
+            playedHistoryIds.add(finishedId); // แบนลงบัญชีดำถาวร ป้องกันเพลงดีดกลับ
+            delete assignedVideos[finishedId];
+            currentQueue.shift();
+            renderUI();
 
             if (currentQueue.length > 0) {
                 handleNewCurrentSong(currentQueue[0]);
@@ -810,8 +786,9 @@
 
         async function syncStatusToBackend(id, status) {
             document.getElementById('loadingIndicator').classList.remove('hidden');
-            try { await fetch(`${GAS_API_URL}?action=updateStatus&id=${encodeURIComponent(id)}&status=${encodeURIComponent(status)}`, { redirect: 'follow' }); }
-            catch (error) {}
+            try { 
+                await fetch(`${GAS_API_URL}?action=updateStatus&id=${encodeURIComponent(id)}&status=${encodeURIComponent(status)}&_t=${Date.now()}`, { redirect: 'follow' }); 
+            } catch (error) {}
             finally { document.getElementById('loadingIndicator').classList.add('hidden'); }
         }
 
@@ -826,29 +803,24 @@
             else if (currentQueue.length > 0) navigator.clipboard.writeText(currentQueue[0].song);
         }
 
-        // 🚀 ฟังก์ชันเริ่มระบบ: รอเวลาและคิวรอบแรกให้พร้อม 100% ก่อน
+        // 🚀 เริ่มระบบทันที 0 วินาที ป๊อปอัปเด้งทันที ไม่แช่แข็งหน้าจอ
         async function startApp() {
             initSettingsStorage();
             
-            // 1. ดึงเวลาและดีเลย์จากชีตทันที
-            await fetchTimeSettings();
-            
-            // 2. ถ้าเปิด AutoPlay ให้ล็อกหน้าจอรอคิวจริงก่อน
+            // 1. โชว์ป๊อปอัปเตือนทันทีใน 0ms! (ตัดเวลาที่ต้องจ้องจอเปล่า 7 วิทิ้ง!)
             const autoPlay = document.getElementById('autoPlayNext').checked;
             if (autoPlay) {
                 isDjReady = false; 
-                setModalLoadingState();
+                document.getElementById('djQueueAlertModal').classList.remove('hidden');
             } else {
                 isDjReady = true;
             }
 
-            // 3. ดึงข้อมูลคิวรอบแรกให้เสร็จสมบูรณ์จริงๆ
-            document.getElementById('loadingIndicator').classList.remove('hidden');
-            await fetchQueue(true);
-            document.getElementById('loadingIndicator').classList.add('hidden');
+            // 2. ดึงเวลาแบบเบื้องหลัง ไม่ขวางใคร
+            fetchTimeSettings();
 
-            // 4. เริ่มระบบรันคิวต่อเนื่อง
-            setInterval(fetchQueue, 2500); 
+            // 3. เริ่มดึงคิวรอบแรกทันที และรันระบบวนรอบแบบไม่ชนกัน
+            startChainedPolling();
         }
 
         window.onload = () => {
