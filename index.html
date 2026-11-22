@@ -5,18 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DJ Studio & Queue Dashboard - ด่านซ้ายเรดิโอ</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📻</text></svg>">
+    
+    <!-- Preconnect Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDK (Compat v9) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Kanit', sans-serif; background-color: #0f172a; color: white; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
     </style>
 </head>
 <body class="h-screen w-full flex flex-col overflow-hidden">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[99999] flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- รหัสผ่าน Overlay -->
     <div id="passwordOverlay" class="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center z-[9999] p-4 select-none">
@@ -28,7 +44,7 @@
         </div>
     </div>
 
-    <!-- 📢 Modal แจ้งเตือนดีเจเตรียมตัว (ระบบล็อกรอข้อมูลจริง ไม่มโน 0 คิว) -->
+    <!-- 📢 Modal แจ้งเตือนดีเจเตรียมตัว -->
     <div id="djQueueAlertModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[9500] hidden flex items-center justify-center p-4 select-none">
         <div class="glass-panel bg-slate-900/95 border border-amber-500/50 rounded-3xl w-full max-w-md p-6 text-center shadow-2xl">
             <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-500/40">🔊</div>
@@ -40,15 +56,14 @@
                     <span>สถานะคิวเพลง:</span>
                     <span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[11px]">รออยู่ <strong id="alertQueueCount" class="text-white">...</strong> คิว</span>
                 </div>
-                <h4 id="alertFirstSong" class="text-white font-bold text-sm sm:text-base truncate">กำลังเชื่อมต่อดึงคิวล่าสุด...</h4>
-                <p class="text-xs text-blue-300">ขอโดย: <span id="alertFirstSender" class="text-gray-300">กรุณารอสักครู่ กำลังโหลดข้อมูล</span></p>
+                <h4 id="alertFirstSong" class="text-white font-bold text-sm sm:text-base truncate">กำลังเชื่อมต่อฐานข้อมูล Realtime...</h4>
+                <p class="text-xs text-blue-300">ขอโดย: <span id="alertFirstSender" class="text-gray-300">กรุณารอสักครู่</span></p>
             </div>
 
             <div class="flex flex-col gap-2.5">
-                <!-- ปุ่มเริ่มต้นจะถูก disabled ล็อกไว้เสมอจนกว่าข้อมูลจะมาถึง -->
                 <button id="alertConfirmBtn" onclick="confirmStartQueue()" disabled class="w-full bg-slate-700 text-gray-400 font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-60">
                     <svg class="animate-spin h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                    กำลังรอข้อมูลคิวจากชีต...
+                    กำลังเชื่อมต่อคิวเพลง...
                 </button>
                 <button onclick="holdQueueForPrep()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-medium py-2.5 rounded-xl text-xs sm:text-sm active:scale-95 transition-all">
                     ⏸️ ขอเบาเสียงก่อน (พักคิวไว้ชั่วคราว)
@@ -84,6 +99,10 @@
             </button>
         </div>
         <div class="flex flex-wrap items-center gap-2 text-xs">
+            <div id="realtimeBadge" class="flex items-center gap-1 bg-emerald-950/80 text-emerald-400 border border-emerald-700/60 px-2.5 py-0.5 rounded-full text-[11px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Realtime ⚡</span>
+            </div>
             <div id="loadingIndicator" class="hidden flex items-center text-yellow-400 text-xs mr-1">
                 <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> อัปเดต...
             </div>
@@ -96,18 +115,18 @@
                 <span class="text-gray-300">เลือกคลิปแรกออโต้</span>
             </label>
             
-            <!-- ⏰ แผงตั้งค่าเวลาทำการ และ ดีเลย์คูลดาวน์ ดึงจากชีต -->
+            <!-- ⏰ แผงตั้งค่าเวลาทำการ และ ดีเลย์คูลดาวน์ Realtime -->
             <div class="flex items-center gap-1.5 bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-gray-300">
                 <div class="flex items-center space-x-1">
                     <span>เวลา:</span>
-                    <input type="text" id="openTime" placeholder="12:30" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 w-11 text-center rounded text-white border border-slate-700 py-0.5">
+                    <input type="text" id="openTime" placeholder="12:00" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 w-11 text-center rounded text-white border border-slate-700 py-0.5">
                     <span>-</span>
                     <input type="text" id="closeTime" placeholder="13:25" maxlength="5" onblur="handleTimeBlur(this)" class="bg-slate-900 w-11 text-center rounded text-white border border-slate-700 py-0.5">
                 </div>
                 <span class="text-slate-600">|</span>
                 <div class="flex items-center space-x-1">
                     <span>ดีเลย์:</span>
-                    <input type="number" id="cooldown" placeholder="2" min="1" max="60" class="bg-slate-900 w-9 text-center rounded text-white border border-slate-700 py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <input type="number" id="cooldown" placeholder="1" min="1" max="60" class="bg-slate-900 w-9 text-center rounded text-white border border-slate-700 py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                     <span>น.</span>
                 </div>
                 <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-2 py-0.5 rounded text-[11px] transition-all ml-0.5 active:scale-95">บันทึก</button>
@@ -183,7 +202,7 @@
         <aside class="w-full sm:w-[35%] md:w-[30%] h-full bg-slate-900 border-t sm:border-t-0 sm:border-l border-slate-700 flex flex-col shadow-2xl z-10">
             <div class="p-3 border-b border-slate-700 bg-slate-800/80 flex justify-between items-center select-none flex-shrink-0">
                 <h3 class="text-xs sm:text-sm font-bold text-blue-400 flex items-center gap-1.5 uppercase">คิวต่อไป</h3>
-                <div class="text-gray-400 text-xs bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-700">
+                <div class="text-gray-400 text-xs bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-700 flex items-center gap-1">
                     รออยู่: <span id="queueCount" class="font-bold text-white ml-0.5">0</span>
                 </div>
             </div>
@@ -192,10 +211,22 @@
 
     </div>
 
+    <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbynRYFemd7P2tDOxjklQUPpwzrLJAAute9Lrpd8uRMyC9029qAfUvNEWpu-MXxWTso4/exec"; 
+        // ⚡ ตั้งค่าเชื่อมต่อ Firebase Realtime Database
+        const FIREBASE_CONFIG = {
+            databaseURL: "https://kigbright-db-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(FIREBASE_CONFIG);
+        const db = firebase.database();
+        const queueRef = db.ref('dicec_radio/queue');
+        const settingsRef = db.ref('dicec_radio/settings');
+        const historyRef = db.ref('dicec_radio/history');
+
+        // 🔗 URL Google Apps Script สำหรับซิงค์สถิติกลับ Sheet ในพื้นหลัง
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbynRYFemd7P2tDOxjklQUPpwzrLJAAute9Lrpd8uRMyC9029qAfUvNEWpu-MXxWTso4/exec";
 
         // 🥷 กุญแจหลัก 1
         const _k1 = "AIzaSy";
@@ -214,22 +245,19 @@
         let activeKeyIndex = 0;
         const API_KEYS = [KEY_1, KEY_2];
 
-        function getActiveKey() {
-            return API_KEYS[activeKeyIndex];
-        }
-
+        function getActiveKey() { return API_KEYS[activeKeyIndex]; }
         function switchKey() {
             activeKeyIndex = (activeKeyIndex + 1) % API_KEYS.length;
             console.warn("🔄 สลับไปใช้ YouTube API Key ตัวที่:", activeKeyIndex + 1);
         }
 
-        // 🎵 ลิสต์สำรอง (Video IDs) ป้องกันกรณีค้นหาไม่เจอ (ใช้โควตา 0 Units ตลอดกาล)
+        // 🎵 ลิสต์สำรอง (Video IDs) ป้องกันกรณีค้นหาไม่เจอ
         const fallbackPlaylist = [
             "GJp5izApAlI", "2yUD--XAnJg", "6JbqGuX3yOo", 
             "Hc4OrO4LRWw", "0iXj7Zkb3Ik", "zMciAtU4miE"
         ];
 
-        // 🏆 คลังเพลงฮิตพรีเมียม
+        // 🏆 คลังเพลงฮิตพรีเมียม (Auto-DJ)
         const premiumBgmList = [
             "คู่คอง ก้อง ห้วยไร่", "เชือกวิเศษ LABANOON", "คำว่าฮักกัน มันเหี่ยถิ่มไส มนต์แคน",
             "ผู้สาวขาเลาะ ลำไย ไหทองคำ", "แพ้ทาง LABANOON", "ห้องนอน Fridaynight",
@@ -249,19 +277,32 @@
         let isVipMode = false;
         let ytPlayer = null;
         let isPlayerReady = false;
-
         let isInitialLoad = true;
         let isDjReady = false; 
 
         let currentPlayingSongId = null;
-        // 🛑 บัญชีดำถาวร: เพลงไหนเล่นแล้ว จำไว้ตลอดไป ไม่มีวันดีดกลับมาเล่นซ้ำเด็ดขาด!
-		let playedHistoryIds = new Set();
         let isTransitioningSong = false;
-
         let currentVipSong = null;
         let assignedVideos = {};
         let targetQueueItemForSearch = null;
         let searchResultsData = [];
+        let lastRenderedHash = "";
+
+        // 📢 ฟังก์ชันแสดง Toast ข้อความแจ้งเตือนมุมจอ
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bg = type === 'warning' ? 'bg-amber-600/90 border-amber-400' : 
+                       type === 'error' ? 'bg-rose-600/90 border-rose-400' : 'bg-blue-600/90 border-blue-400';
+            toast.className = `${bg} text-white text-xs sm:text-sm px-3.5 py-2 rounded-xl shadow-xl border backdrop-blur-md flex items-center gap-2 animate-fade-in pointer-events-auto`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         function initSettingsStorage() {
             const autoPlayNextCb = document.getElementById('autoPlayNext');
@@ -274,25 +315,21 @@
             autoPickFirstCb.addEventListener('change', () => localStorage.setItem('dj_autoPickFirst', autoPickFirstCb.checked));
         }
 
-        // 🔒 แสดงหน้าต่าง Modal ในสถานะ "กำลังโหลดรอข้อมูลจากชีต" (ปุ่มจะถูกล็อกกดไม่ได้)
         function setModalLoadingState() {
             const modal = document.getElementById('djQueueAlertModal');
             const confirmBtn = document.getElementById('alertConfirmBtn');
-            
             document.getElementById('alertQueueCount').innerText = "...";
-            document.getElementById('alertFirstSong').innerText = "กำลังเชื่อมต่อดึงคิวล่าสุด...";
-            document.getElementById('alertFirstSender').innerText = "กรุณารอสักครู่ กำลังโหลดข้อมูลจากชีต";
-
+            document.getElementById('alertFirstSong').innerText = "กำลังเชื่อมต่อคิวล่าสุด...";
+            document.getElementById('alertFirstSender').innerText = "กำลังดึงข้อมูล Realtime";
             confirmBtn.disabled = true;
             confirmBtn.className = "w-full bg-slate-700 text-gray-400 font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-60";
             confirmBtn.innerHTML = `
                 <svg class="animate-spin h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                กำลังรอข้อมูลคิวจากชีต...
+                กำลังรอข้อมูลคิว...
             `;
             modal.classList.remove('hidden');
         }
 
-        // 🔓 แสดงข้อมูลจริงที่ดึงได้จากชีต และปลดล็อกปุ่มให้กดเริ่มได้
         function showDjQueueAlertModal(firstSong, totalCount) {
             const confirmBtn = document.getElementById('alertConfirmBtn');
             document.getElementById('alertQueueCount').innerText = totalCount;
@@ -309,15 +346,12 @@
 
             confirmBtn.disabled = false;
             confirmBtn.className = "w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer";
-
             document.getElementById('djQueueAlertModal').classList.remove('hidden');
         }
 
         function confirmStartQueue() {
             document.getElementById('djQueueAlertModal').classList.add('hidden');
             isDjReady = true; 
-            
-            // 🎯 ข้อมูลจริงมาแล้ว 100% ถ้ามีคิวนักเรียนเปิดเพลงนักเรียนทันที ไม่ไปสุ่ม!
             if (currentQueue.length > 0) {
                 handleNewCurrentSong(currentQueue[0]);
             } else {
@@ -339,7 +373,7 @@
                 let res = await fetch(url);
                 let data = await res.json();
 
-                if (data.error && (data.error.code === 403 || data.error.message.includes('Quota'))) {
+                if (data.error && (data.error.code === 403 || (data.error.message && data.error.message.includes('Quota')))) {
                     switchKey();
                     key = getActiveKey();
                     url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResults}&type=video&q=${encodeURIComponent(query)}&key=${key}`;
@@ -371,13 +405,11 @@
             document.getElementById('c_song').innerText = "กำลังค้นหาคลิป: " + randomSongTitle + "...";
 
             const data = await fetchYouTubeSearch(randomSongTitle, 1);
-            
             if (data && data.items && data.items.length > 0) {
                 const vid = data.items[0].id.videoId;
                 currentVipSong.videoId = vid;
                 loadVideoToPlayer(vid, null);
             } else {
-                console.warn("Search yielded no video, playing guaranteed fallback ID.");
                 const fallbackVid = fallbackPlaylist[Math.floor(Math.random() * fallbackPlaylist.length)];
                 currentVipSong.videoId = fallbackVid;
                 loadVideoToPlayer(fallbackVid, null);
@@ -387,7 +419,27 @@
         window.onYouTubeIframeAPIReady = function() {};
 
         function onPlayerStateChange(event) {
+            // event.data === 0 คือเพลงจบ (ENDED)
             if (event.data === 0) handleSongEnded();
+        }
+
+        // 🛡️ พระเอกคนใหม่: ตัวดักจับ Error ของ YouTube Player (แก้ปัญหาเพลงหยุดค้าง 100%)
+        function onPlayerError(event) {
+            console.warn("⚠️ YouTube Player Error Code:", event.data);
+            let reason = "คลิปเล่นไม่ได้";
+            if (event.data === 150 || event.data === 101) {
+                reason = "คลิปนี้ติดสิทธิ์ห้ามเปิดบนเว็บอื่น (Error 150/101)";
+            } else if (event.data === 100) {
+                reason = "ไม่พบคลิปนี้ หรือคลิปถูกลบ/ตั้งเป็นส่วนตัว";
+            } else if (event.data === 2) {
+                reason = "รหัสวิดีโอไม่ถูกต้อง";
+            }
+            showToast(`⚠️ ${reason} ➔ กำลังสลับเพลงให้อัตโนมัติ...`, 'warning');
+
+            // หน่วงเวลาสั้นๆ 1 วินาทีแล้วเปลี่ยนเพลงอัตโนมัติทันที ไม่ค้างหน้าจอ
+            setTimeout(() => {
+                handleSongEnded();
+            }, 1000);
         }
 
         function handleSongEnded() {
@@ -396,13 +448,12 @@
             if (autoNext && !isVipMode) {
                 isTransitioningSong = true;
                 updateStatus('played');
-                setTimeout(() => { isTransitioningSong = false; }, 1200);
+                setTimeout(() => { isTransitioningSong = false; }, 1500);
             }
         }
 
         function loadVideoToPlayer(videoId, songId = null) {
             if (!isDjReady || !videoId) return; 
-
             currentPlayingSongId = songId;
 
             document.getElementById('playerPlaceholder').classList.add('hidden');
@@ -410,8 +461,12 @@
             document.getElementById('noQueueMessage').classList.add('hidden');
 
             if (ytPlayer && isPlayerReady && typeof ytPlayer.loadVideoById === 'function') {
-                try { ytPlayer.loadVideoById(videoId); return; } 
-                catch (err) { console.warn("Error using existing player:", err); }
+                try { 
+                    ytPlayer.loadVideoById(videoId); 
+                    return; 
+                } catch (err) { 
+                    console.warn("Error using existing player:", err); 
+                }
             }
             mountYouTubePlayer(videoId);
         }
@@ -423,14 +478,24 @@
                 container.innerHTML = '<div id="ytPlayerTarget" class="w-full h-full"></div>';
                 ytPlayer = new YT.Player('ytPlayerTarget', {
                     videoId: videoId,
-                    playerVars: { 'autoplay': 1, 'playsinline': 1, 'rel': 0 },
+                    playerVars: { 
+                        'autoplay': 1, 
+                        'playsinline': 1, 
+                        'rel': 0,
+                        'enablejsapi': 1,
+                        'origin': window.location.origin
+                    },
                     events: {
-                        'onReady': (event) => { isPlayerReady = true; event.target.playVideo(); },
-                        'onStateChange': onPlayerStateChange
+                        'onReady': (event) => { 
+                            isPlayerReady = true; 
+                            try { event.target.playVideo(); } catch(e){}
+                        },
+                        'onStateChange': onPlayerStateChange,
+                        'onError': onPlayerError // 🛡️ ผูกตัวดัก Error ที่นี่
                     }
                 });
             } else {
-                setTimeout(() => mountYouTubePlayer(videoId), 500);
+                setTimeout(() => mountYouTubePlayer(videoId), 400);
             }
         }
 
@@ -457,11 +522,17 @@
                 banner.classList.remove('hidden');
                 dot.className = "w-2 h-2 rounded-full bg-amber-400";
                 btnText.innerText = "สถานะ: ⏸️ พักคิว (โหมด VIP)";
+                showToast("⏸️ เปิดโหมด VIP พักคิวเพลงของนักเรียน", "warning");
             } else {
                 banner.classList.add('hidden');
                 dot.className = "w-2 h-2 rounded-full bg-emerald-400";
                 btnText.innerText = "สถานะ: รันคิวปกติ";
-                fetchQueue();
+                showToast("▶️ กลับสู่โหมดรันคิวปกติ", "info");
+                if (currentQueue.length > 0) {
+                    handleNewCurrentSong(currentQueue[0]);
+                } else {
+                    playRandomBGM();
+                }
             }
         }
 
@@ -501,7 +572,6 @@
             }
 
             container.innerHTML = `<div class="text-center text-yellow-400 py-6">กำลังค้นหาใน YouTube...</div>`;
-
             const data = await fetchYouTubeSearch(query, 5);
 
             if (!data) {
@@ -564,24 +634,25 @@
             }
             closeSearchModal();
             renderUI();
+            showToast("✓ เลือกคลิปเรียบร้อยแล้ว", "info");
         }
 
-        // ⏰ ดึงเวลาทำการและดีเลย์จากชีต (แบบชัวร์ 100% มี Fallback)
-        async function fetchTimeSettings() {
-            try {
-                const response = await fetch(`${GAS_API_URL}?action=getTimeSettings`, { redirect: 'follow' });
-                const data = await response.json();
+        // ⏰ ดึงและบันทึกเวลาทำการ / ดีเลย์ ผ่าน Firebase Realtime (เร็วระดับ ms)
+        function listenTimeSettings() {
+            settingsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
                 if (data) {
-                    document.getElementById('openTime').value = data.openTime || "12:30";
-                    document.getElementById('closeTime').value = data.closeTime || "13:25";
-                    document.getElementById('cooldown').value = data.cooldownMinutes || "2";
+                    if (document.activeElement !== document.getElementById('openTime')) {
+                        document.getElementById('openTime').value = data.openTime || "12:00";
+                    }
+                    if (document.activeElement !== document.getElementById('closeTime')) {
+                        document.getElementById('closeTime').value = data.closeTime || "13:25";
+                    }
+                    if (document.activeElement !== document.getElementById('cooldown')) {
+                        document.getElementById('cooldown').value = data.cooldownMinutes || "1";
+                    }
                 }
-            } catch (error) {
-                console.error("Error fetching settings:", error);
-                if (!document.getElementById('openTime').value) document.getElementById('openTime').value = "12:30";
-                if (!document.getElementById('closeTime').value) document.getElementById('closeTime').value = "13:25";
-                if (!document.getElementById('cooldown').value) document.getElementById('cooldown').value = "2";
-            }
+            });
         }
 
         function validateAndFormatTime(value) {
@@ -600,7 +671,7 @@
             if (input.value.trim() === "") return;
             let formatted = validateAndFormatTime(input.value);
             if (formatted === null) {
-                alert("รูปแบบเวลาไม่ถูกต้อง กรุณากรอกใหม่ (เช่น 1230 หรือ 12:30)");
+                alert("รูปแบบเวลาไม่ถูกต้อง กรุณากรอกใหม่ (เช่น 1200 หรือ 12:00)");
                 input.value = "";
                 setTimeout(() => input.focus(), 10);
             } else { input.value = formatted; }
@@ -611,36 +682,47 @@
             const closeTime = validateAndFormatTime(document.getElementById('closeTime').value);
             const cooldown = parseInt(document.getElementById('cooldown').value, 10);
             
-            if (!openTime || !closeTime) return alert("กรุณากรอกช่วงเวลาเปิด-ปิดทำการให้ถูกต้อง (เช่น 1230 ถึง 1325)");
+            if (!openTime || !closeTime) return alert("กรุณากรอกช่วงเวลาเปิด-ปิดทำการให้ถูกต้อง (เช่น 1200 ถึง 1325)");
             if (isNaN(cooldown) || cooldown < 1 || cooldown > 60) return alert("กรุณาระบุดีเลย์คิวเพลงให้อยู่ในช่วง 1 ถึง 60 นาทีครับ");
 
             document.getElementById('openTime').value = openTime;
             document.getElementById('closeTime').value = closeTime;
-            document.getElementById('loadingIndicator').classList.remove('hidden');
             
             try {
-                const response = await fetch(`${GAS_API_URL}?action=updateTimeSettings&openTime=${encodeURIComponent(openTime)}&closeTime=${encodeURIComponent(closeTime)}&cooldownMinutes=${cooldown}`, { redirect: 'follow' });
-                const data = await response.json();
-                if (data.success) alert("บันทึกการตั้งค่าเรียบร้อยแล้ว\n- เวลาทำการ: " + openTime + " - " + closeTime + " น.\n- ดีเลย์การขอเพลง: " + cooldown + " นาที");
-            } catch (error) {
+                await settingsRef.set({
+                    openTime: openTime,
+                    closeTime: closeTime,
+                    cooldownMinutes: cooldown,
+                    updatedAt: Date.now()
+                });
+                showToast("✓ บันทึกการตั้งค่าเรียบร้อยแล้ว", "info");
+            } catch (err) {
+                console.error("Save settings error:", err);
                 alert("เกิดข้อผิดพลาดในการบันทึก");
-            } finally { 
-                document.getElementById('loadingIndicator').classList.add('hidden'); 
             }
         }
 
-		async function fetchQueue(isFirstRun = false) {
-            try {
-                const response = await fetch(`${GAS_API_URL}?action=getQueue&_t=${Date.now()}`, { redirect: 'follow' });
-                const rawData = await response.json();
-                
-                // 🛑 กรองทิ้งทันที: ถ้ามีเพลงไหนที่เคยเล่นไปแล้วในเซสชั่นนี้ ห้ามหลุดเข้ามาในคิวเด็ดขาด!
-                const data = Array.isArray(rawData) ? rawData.filter(item => !playedHistoryIds.has(item.id)) : [];
+        // ⚡ ระบบ Realtime Listener: เมื่อมีเพลงเข้า-ออก จะทำงานอัตโนมัติ 0.1 วินาที!
+        function listenToQueueRealtime() {
+            queueRef.on('value', (snapshot) => {
+                const raw = snapshot.val();
+                const list = [];
+                if (raw) {
+                    Object.keys(raw).forEach(key => {
+                        list.push({
+                            id: key,
+                            ...raw[key]
+                        });
+                    });
+                }
 
-                const isNewFirstSong = data.length > 0 && (currentQueue.length === 0 || currentQueue[0].id !== data[0].id);
-                currentQueue = data;
-                
-                if (isFirstRun || isInitialLoad) {
+                // เรียงตามเวลา timestamp (FIFO: มาก่อนได้เล่นก่อน)
+                list.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+                const isNewFirstSong = list.length > 0 && (currentQueue.length === 0 || currentQueue[0].id !== list[0].id);
+                currentQueue = list;
+
+                if (isInitialLoad) {
                     isInitialLoad = false;
                     const autoPlay = document.getElementById('autoPlayNext').checked;
                     if (autoPlay && !isDjReady) {
@@ -650,21 +732,15 @@
 
                 renderUI();
 
-                if (!isDjReady) return; 
-
-                if (isVipMode || (currentVipSong && !currentVipSong.isBGM)) {
-                    return;
-                }
+                if (!isDjReady) return;
+                if (isVipMode || (currentVipSong && !currentVipSong.isBGM)) return;
 
                 if (isNewFirstSong && (!currentVipSong || !currentVipSong.isBGM)) {
                     handleNewCurrentSong(currentQueue[0]);
                 } else if (currentQueue.length === 0 && !currentPlayingSongId && !currentVipSong) {
                     playRandomBGM();
                 }
-
-            } catch (error) {
-                console.error("fetchQueue error:", error);
-            }
+            });
         }
 
         async function handleNewCurrentSong(songItem) {
@@ -685,17 +761,28 @@
 
             const autoPick = document.getElementById('autoPickFirst').checked;
             if (autoPick) {
-                const data = await fetchYouTubeSearch(songItem.song, 1);
+                document.getElementById('c_song').innerText = "กำลังค้นหาคลิป: " + songItem.song + "...";
+                let data = await fetchYouTubeSearch(songItem.song, 1);
+                
+                // หากค้นหาตรงๆ ไม่เจอ ลองค้นหาเติมคำว่า "เพลง" ให้อัตโนมัติ
+                if (!data || !data.items || data.items.length === 0) {
+                    data = await fetchYouTubeSearch(songItem.song + " เพลง", 1);
+                }
+
                 if (data && data.items && data.items.length > 0) {
                     const vid = data.items[0].id.videoId;
                     assignedVideos[songItem.id] = { videoId: vid };
                     loadVideoToPlayer(vid, songItem.id);
                 } else {
                     console.warn("Auto-pick yielded no results for:", songItem.song);
+                    showToast(`⚠️ หาคลิป "${songItem.song}" ไม่พบ กำลังเปิดเพลงสำรอง...`, 'warning');
+                    const fallbackVid = fallbackPlaylist[Math.floor(Math.random() * fallbackPlaylist.length)];
+                    loadVideoToPlayer(fallbackVid, songItem.id);
                 }
             }
         }
 
+        // 🎨 Render UI อย่างชาญฉลาด ไม่ Re-render DOM ซ้ำซาก
         function renderUI() {
             const noQueueMessage = document.getElementById('noQueueMessage');
             const currentSongBox = document.getElementById('currentSongBox');
@@ -718,12 +805,12 @@
                 } else {
                     msgBox.classList.add('hidden');
                 }
-
                 startIndex = 0; 
             } else if (currentQueue.length === 0) {
                 noQueueMessage.classList.remove('hidden');
                 currentSongBox.classList.add('hidden');
                 nextQueueContainer.innerHTML = `<div class="text-center text-gray-500 py-10 text-xs">ไม่มีคิวต่อไป</div>`;
+                lastRenderedHash = "";
                 return;
             } else {
                 noQueueMessage.classList.add('hidden');
@@ -739,9 +826,13 @@
                     msgBox.classList.remove('hidden');
                     document.getElementById('c_message').innerText = "ไม่มีข้อความฝากถึงเป็นพิเศษ";
                 }
-
                 startIndex = 1; 
             }
+
+            // คำนวณ Hash เพื่อเช็คว่าคิวเปลี่ยนจริงไหม ถ้าไม่เปลี่ยนไม่ต้องสร้าง DOM ใหม่
+            const currentHash = currentQueue.slice(startIndex).map(item => item.id + (assignedVideos[item.id] ? '_assigned' : '')).join(',');
+            if (currentHash === lastRenderedHash) return;
+            lastRenderedHash = currentHash;
 
             nextQueueContainer.innerHTML = '';
             if (currentQueue.length > startIndex) {
@@ -749,8 +840,8 @@
                     const item = currentQueue[i];
                     const isAssigned = assignedVideos[item.id];
                     const div = document.createElement('div');
-                    div.className = "bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80 shadow-sm flex items-center justify-between gap-2";
-                    const safeSong = item.song.replace(/'/g, "\\'");
+                    div.className = "bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80 shadow-sm flex items-center justify-between gap-2 transition-all";
+                    const safeSong = (item.song || "").replace(/'/g, "\\'");
                     
                     const isNextUp = (i === 0 && currentVipSong) ? `<span class="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded ml-1 animate-pulse">คิวถัดไป!</span>` : '';
                     const hasMsg = (item.msg && item.msg !== "-") ? `<p class="text-amber-300 text-[10px] mt-0.5 truncate">💬 "${item.msg}"</p>` : '';
@@ -774,7 +865,8 @@
             }
         }
 
-        function updateStatus(status) {
+        // ⚡ อัปเดตสถานะเพลง (ลบคิวใน Firebase Realtime ทันที ไม่มีดีเลย์)
+        async function updateStatus(status) {
             if (!isDjReady) return; 
 
             if (currentVipSong) {
@@ -792,27 +884,31 @@
             if (currentQueue.length === 0) return;
             if (status === 'skipped' && !confirm("แน่ใจหรือไม่ว่าจะ 'ข้าม' คิวนี้?")) return;
 
-            const finishedId = currentQueue[0].id;
-			playedHistoryIds.add(finishedId); // 🛑 ใส่ลงบัญชีดำทันที
-			delete assignedVideos[finishedId];
-			currentQueue.shift();
-			renderUI();
+            const finishedItem = currentQueue[0];
+            delete assignedVideos[finishedItem.id];
 
-            if (currentQueue.length > 0) {
-                handleNewCurrentSong(currentQueue[0]);
-            } else {
-                currentPlayingSongId = null;
-                playRandomBGM(); 
+            // 1. บันทึกลง History ใน Firebase เผื่อตรวจสอบย้อนหลัง
+            try {
+                historyRef.push({
+                    song: finishedItem.song || "",
+                    sender: finishedItem.sender || "",
+                    msg: finishedItem.msg || "-",
+                    status: status,
+                    finishedAt: Date.now()
+                });
+            } catch(e) {}
+
+            // 2. ลบคิวออกจาก Firebase Realtime (ทุกคนและดีเจจะเห็นการลบทันที 0.1 วิ)
+            try {
+                await queueRef.child(finishedItem.id).remove();
+            } catch (err) {
+                console.error("Remove queue item error:", err);
             }
 
-            syncStatusToBackend(finishedId, status);
-        }
-
-        async function syncStatusToBackend(id, status) {
-            document.getElementById('loadingIndicator').classList.remove('hidden');
-            try { await fetch(`${GAS_API_URL}?action=updateStatus&id=${encodeURIComponent(id)}&status=${encodeURIComponent(status)}`, { redirect: 'follow' }); }
-            catch (error) {}
-            finally { document.getElementById('loadingIndicator').classList.add('hidden'); }
+            // 3. ซิงค์สถานะกลับไปบันทึกลง Google Sheet ในพื้นหลัง (ไม่ขัดจังหวะหน้าจอ)
+            if (finishedItem.id) {
+                fetch(`${GAS_API_URL}?action=updateStatus&id=${encodeURIComponent(finishedItem.id)}&status=${encodeURIComponent(status)}`, { redirect: 'follow' }).catch(() => {});
+            }
         }
 
         function copyTextToClipboard(text, btn) {
@@ -826,14 +922,10 @@
             else if (currentQueue.length > 0) navigator.clipboard.writeText(currentQueue[0].song);
         }
 
-        // 🚀 ฟังก์ชันเริ่มระบบ: รอเวลาและคิวรอบแรกให้พร้อม 100% ก่อน
-        async function startApp() {
+        // 🚀 เริ่มแอปพลิเคชัน
+        function startApp() {
             initSettingsStorage();
             
-            // 1. ดึงเวลาและดีเลย์จากชีตทันที
-            await fetchTimeSettings();
-            
-            // 2. ถ้าเปิด AutoPlay ให้ล็อกหน้าจอรอคิวจริงก่อน
             const autoPlay = document.getElementById('autoPlayNext').checked;
             if (autoPlay) {
                 isDjReady = false; 
@@ -842,13 +934,9 @@
                 isDjReady = true;
             }
 
-            // 3. ดึงข้อมูลคิวรอบแรกให้เสร็จสมบูรณ์จริงๆ
-            document.getElementById('loadingIndicator').classList.remove('hidden');
-            await fetchQueue(true);
-            document.getElementById('loadingIndicator').classList.add('hidden');
-
-            // 4. เริ่มระบบรันคิวต่อเนื่อง
-            setInterval(fetchQueue, 2500); 
+            // ฟังการเปลี่ยนแปลงของเวลาทำการและคิวเพลงแบบ Realtime
+            listenTimeSettings();
+            listenToQueueRealtime();
         }
 
         window.onload = () => {
