@@ -689,12 +689,17 @@
             document.getElementById('closeTime').value = closeTime;
             
             try {
+                // 1. บันทึกลง Firebase Realtime
                 await settingsRef.set({
                     openTime: openTime,
                     closeTime: closeTime,
                     cooldownMinutes: cooldown,
                     updatedAt: Date.now()
                 });
+
+                // 2. ซิงค์ไปยัง Google Apps Script (เพื่อให้ LINE Bot รับรู้เวลาใหม่ทันที)
+                fetch(`${GAS_API_URL}?action=updateTimeSettings&openTime=${encodeURIComponent(openTime)}&closeTime=${encodeURIComponent(closeTime)}&cooldownMinutes=${cooldown}`, { redirect: 'follow' }).catch(() => {});
+
                 showToast("✓ บันทึกการตั้งค่าเรียบร้อยแล้ว", "info");
             } catch (err) {
                 console.error("Save settings error:", err);
