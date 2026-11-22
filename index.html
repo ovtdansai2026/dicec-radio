@@ -76,12 +76,20 @@
     <div id="searchModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9000] hidden flex items-center justify-center p-3 sm:p-6">
         <div class="glass-panel bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/60">
-                <h3 class="text-lg sm:text-xl font-bold text-blue-400 flex items-center gap-2">🔍 ค้นหาเพลง YouTube</h3>
+                <h3 id="searchModalTitle" class="text-lg sm:text-xl font-bold text-blue-400 flex items-center gap-2">🔍 ค้นหาเพลง YouTube</h3>
                 <button onclick="closeSearchModal()" class="text-gray-400 hover:text-white text-2xl px-2">&times;</button>
             </div>
-            <div class="p-4 border-b border-slate-700/60 flex gap-2">
-                <input type="text" id="modalSearchInput" onkeydown="if(event.key === 'Enter') executeSearch()" placeholder="พิมพ์ชื่อเพลง หรือ วางลิงก์ YouTube (กด Enter เพื่อค้นหา)..." class="flex-grow bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500 text-sm sm:text-base">
-                <button onclick="executeSearch()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm sm:text-base font-medium active:scale-95">ค้นหา</button>
+            <div class="p-4 border-b border-slate-700/60 flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <input type="text" id="modalSearchInput" onkeydown="if(event.key === 'Enter') executeSearch()" placeholder="พิมพ์ชื่อเพลง หรือ วางลิงก์ YouTube (กด Enter เพื่อค้นหา)..." class="flex-grow bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500 text-sm sm:text-base">
+                    <button onclick="executeSearch()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm sm:text-base font-medium active:scale-95">ค้นหา</button>
+                </div>
+                <div id="quickAddBtnRow" class="hidden flex justify-between items-center pt-1 text-xs text-gray-400">
+                    <span>หรือเพิ่มเพลงทันที:</span>
+                    <button onclick="quickAddCurrentInput()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-semibold flex items-center gap-1 active:scale-95 shadow transition-all">
+                        ➕ เพิ่มชื่อเพลงนี้เข้าคิวทันที
+                    </button>
+                </div>
             </div>
             <div id="searchResultsContainer" class="p-4 overflow-y-auto custom-scrollbar flex-grow space-y-3 min-h-[250px]">
                 <p class="text-center text-gray-400 my-auto text-sm">พิมพ์ชื่อเพลงเพื่อค้นหา หรือวางลิงก์ YouTube ด้านบนได้เลยครับ</p>
@@ -201,10 +209,15 @@
 
         <aside class="w-full sm:w-[35%] md:w-[30%] h-full bg-slate-900 border-t sm:border-t-0 sm:border-l border-slate-700 flex flex-col shadow-2xl z-10">
             <div class="p-3 border-b border-slate-700 bg-slate-800/80 flex justify-between items-center select-none flex-shrink-0">
-                <h3 class="text-xs sm:text-sm font-bold text-blue-400 flex items-center gap-1.5 uppercase">คิวต่อไป</h3>
-                <div class="text-gray-400 text-xs bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-700 flex items-center gap-1">
-                    รออยู่: <span id="queueCount" class="font-bold text-white ml-0.5">0</span>
+                <div class="flex items-center gap-1.5">
+                    <h3 class="text-xs sm:text-sm font-bold text-blue-400 uppercase">คิวต่อไป</h3>
+                    <div class="text-gray-400 text-xs bg-slate-900 px-2 py-0.5 rounded-full border border-slate-700 flex items-center gap-1">
+                        <span id="queueCount" class="font-bold text-white">0</span>
+                    </div>
                 </div>
+                <button onclick="openAddQueueModal()" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1 shadow active:scale-95 transition-all">
+                    ➕ เพิ่มคิวเพลง
+                </button>
             </div>
             <div id="nextQueueContainer" class="flex-grow overflow-y-auto p-2.5 space-y-2 custom-scrollbar bg-slate-900/40"></div>
         </aside>
@@ -556,14 +569,117 @@
             }
         }
 
+        let isAddQueueMode = false;
+
+        function openAddQueueModal() {
+            isAddQueueMode = true;
+            targetQueueItemForSearch = null;
+            document.getElementById('searchModalTitle').innerHTML = '➕ ค้นหาและเพิ่มเพลงเข้าคิว';
+            document.getElementById('modalSearchInput').value = '';
+            document.getElementById('modalSearchInput').placeholder = 'พิมพ์ชื่อเพลง ศิลปิน หรือวางลิงก์ YouTube...';
+            document.getElementById('quickAddBtnRow').classList.remove('hidden');
+            document.getElementById('searchResultsContainer').innerHTML = `
+                <div class="text-center text-gray-400 my-auto text-sm py-10 space-y-1">
+                    <p class="font-medium text-white">พิมพ์ชื่อเพลงเพื่อค้นหาคลิป YouTube</p>
+                    <p class="text-xs opacity-70">หรือพิมพ์ชื่อเพลงแล้วกด "เพิ่มชื่อเพลงนี้เข้าคิวทันที" ด้านบนได้เลยครับ</p>
+                </div>
+            `;
+            document.getElementById('searchModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('modalSearchInput').focus(), 50);
+        }
+
+        async function quickAddCurrentInput() {
+            const val = document.getElementById('modalSearchInput').value.trim();
+            if (!val) return alert("กรุณาพิมพ์ชื่อเพลงหรือวางลิงก์ก่อนครับ");
+            const directId = extractVideoID(val);
+            await addSongToQueue(val, directId, null);
+        }
+
+        async function addSongToQueue(title, videoId = null, thumb = null) {
+            if (!title) return;
+            const newRef = queueRef.push();
+            const newId = newRef.key;
+            if (videoId) {
+                assignedVideos[newId] = { videoId, title, thumb };
+            }
+            const songItem = {
+                id: newId,
+                song: title,
+                sender: "ดีเจ (เพิ่มเอง)",
+                msg: "เพลงที่เพิ่มโดยดีเจ",
+                timestamp: Date.now(),
+                status: "waiting"
+            };
+            try {
+                await newRef.set(songItem);
+                showToast(`✓ เพิ่มเพลง "${title}" เข้าคิวแล้ว`, "info");
+                closeSearchModal();
+            } catch(err) {
+                console.error("Add queue error:", err);
+                showToast("เกิดข้อผิดพลาดในการเพิ่มคิว", "error");
+            }
+        }
+
+        // 🔀 สลับลำดับคิวเพลง (เลื่อนขึ้น - เลื่อนลง)
+        async function swapQueueOrder(idxA, idxB) {
+            if (idxA < 0 || idxA >= currentQueue.length || idxB < 0 || idxB >= currentQueue.length) return;
+            
+            let timeA = currentQueue[idxA].timestamp || Date.now();
+            let timeB = currentQueue[idxB].timestamp || Date.now();
+            if (timeA === timeB) {
+                if (idxA < idxB) timeB = timeA + 1000;
+                else timeA = timeB + 1000;
+            }
+            
+            const idA = currentQueue[idxA].id;
+            const idB = currentQueue[idxB].id;
+            
+            // สลับใน local queue ทันทีให้ตาเห็นเร็ว 0ms
+            const temp = currentQueue[idxA];
+            currentQueue[idxA] = currentQueue[idxB];
+            currentQueue[idxB] = temp;
+            lastRenderedHash = ""; // บังคับ re-render
+            renderUI();
+            
+            try {
+                await Promise.all([
+                    queueRef.child(idA).update({ timestamp: timeB }),
+                    queueRef.child(idB).update({ timestamp: timeA })
+                ]);
+                showToast("✓ สลับลำดับคิวเรียบร้อยแล้ว", "info");
+            } catch (err) {
+                console.error("Swap queue error:", err);
+            }
+        }
+
+        // 🗑️ ลบคิวเพลง
+        async function deleteQueueItem(id, songName) {
+            if (!confirm(`คุณต้องการลบเพลง "${songName}" ออกจากคิวหรือไม่?`)) return;
+            delete assignedVideos[id];
+            currentQueue = currentQueue.filter(item => item.id !== id);
+            lastRenderedHash = "";
+            renderUI();
+            try {
+                await queueRef.child(id).remove();
+                showToast(`✓ ลบเพลง "${songName}" ออกจากคิวแล้ว`, "info");
+            } catch (err) {
+                console.error("Delete error:", err);
+            }
+        }
+
         function openSearchForCurrentSong() {
+            isAddQueueMode = false;
             if (currentVipSong && currentVipSong.title) openSearchModal(null, currentVipSong.title.replace("🎧 ออโต้ดีเจ: ", ""));
             else if (currentQueue.length > 0) openSearchModal(currentQueue[0], currentQueue[0].song);
         }
 
         function openSearchModal(queueItem, defaultQuery) {
+            isAddQueueMode = false;
             targetQueueItemForSearch = queueItem;
+            document.getElementById('searchModalTitle').innerHTML = '🔍 ค้นหาเพลง YouTube';
+            document.getElementById('quickAddBtnRow').classList.add('hidden');
             document.getElementById('modalSearchInput').value = defaultQuery || '';
+            document.getElementById('modalSearchInput').placeholder = 'พิมพ์ชื่อเพลง หรือ วางลิงก์ YouTube (กด Enter เพื่อค้นหา)...';
             document.getElementById('searchModal').classList.remove('hidden');
             if (defaultQuery) executeSearch();
         }
@@ -571,6 +687,8 @@
         function closeSearchModal() {
             document.getElementById('searchModal').classList.add('hidden');
             targetQueueItemForSearch = null;
+            isAddQueueMode = false;
+            document.getElementById('quickAddBtnRow').classList.add('hidden');
         }
 
         function extractVideoID(url) {
@@ -587,7 +705,7 @@
 
             const directVideoId = extractVideoID(query);
             if (directVideoId) {
-                selectVideo(directVideoId, "ลิงก์ YouTube ที่ระบุ", "");
+                selectVideo(directVideoId, query, "");
                 return;
             }
 
@@ -614,6 +732,9 @@
             searchResultsData = data.items;
             container.innerHTML = '';
 
+            const btnText = isAddQueueMode ? "➕ เพิ่มเข้าคิว" : "เลือกคลิปนี้";
+            const btnBg = isAddQueueMode ? "bg-emerald-600 hover:bg-emerald-500" : "bg-blue-600 hover:bg-blue-500";
+
             data.items.forEach((item, index) => {
                 const title = item.snippet.title;
                 const channel = item.snippet.channelTitle;
@@ -629,7 +750,7 @@
                             <p class="text-gray-400 text-xs truncate mt-0.5">${channel}</p>
                         </div>
                     </div>
-                    <button onclick="selectVideoByIndex(${index})" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 active:scale-95 shadow">เลือกคลิปนี้</button>
+                    <button onclick="selectVideoByIndex(${index})" class="${btnBg} text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 active:scale-95 shadow">${btnText}</button>
                 `;
                 container.appendChild(div);
             });
@@ -642,6 +763,10 @@
         }
 
         function selectVideo(videoId, title, thumb) {
+            if (isAddQueueMode) {
+                addSongToQueue(title, videoId, thumb);
+                return;
+            }
             if (targetQueueItemForSearch) {
                 assignedVideos[targetQueueItemForSearch.id] = { videoId, title, thumb };
                 if (currentQueue.length > 0 && currentQueue[0].id === targetQueueItemForSearch.id) {
@@ -870,17 +995,29 @@
                     
                     const isNextUp = (i === 0 && currentVipSong) ? `<span class="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded ml-1 animate-pulse">คิวถัดไป!</span>` : '';
                     const hasMsg = (item.msg && item.msg !== "-") ? `<p class="text-amber-300 text-[10px] mt-0.5 truncate">💬 "${item.msg}"</p>` : '';
+                    const isFirstInWaiting = (i === startIndex);
+                    const isLastInWaiting = (i === currentQueue.length - 1);
+                    const queueNum = (i - startIndex + 1);
 
                     div.innerHTML = `
-                        <div class="min-w-0 flex-grow pl-1">
-                            <p class="text-white font-medium text-xs truncate select-text">${item.song} ${isNextUp}</p>
-                            <p class="text-gray-400 text-[10px] mt-0.5 truncate">โดย: <span class="text-blue-300">${item.sender}</span></p>
-                            ${hasMsg}
-                            ${isAssigned ? `<span class="inline-block mt-1 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">✓ เตรียมคลิปแล้ว</span>` : ''}
+                        <div class="flex items-center gap-2 min-w-0 flex-grow">
+                            <span class="text-[10px] font-bold text-blue-300 bg-slate-900/90 w-5 h-5 rounded-md flex items-center justify-center border border-slate-700 flex-shrink-0">${queueNum}</span>
+                            <div class="min-w-0 flex-grow pl-0.5">
+                                <p class="text-white font-medium text-xs truncate select-text">${item.song} ${isNextUp}</p>
+                                <p class="text-gray-400 text-[10px] mt-0.5 truncate">โดย: <span class="text-blue-300">${item.sender}</span></p>
+                                ${hasMsg}
+                                ${isAssigned ? `<span class="inline-block mt-0.5 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">✓ เตรียมคลิปแล้ว</span>` : ''}
+                            </div>
                         </div>
                         <div class="flex items-center gap-1 flex-shrink-0">
+                            <!-- ปุ่มสลับลำดับคิว (ขึ้น-ลง) -->
+                            <div class="flex flex-col gap-0.5">
+                                <button onclick="swapQueueOrder(${i}, ${i - 1})" ${isFirstInWaiting ? 'disabled class="opacity-20 cursor-not-allowed bg-slate-800 text-gray-500 px-1.5 py-0.5 rounded text-[8px]"' : 'class="bg-slate-700 hover:bg-slate-600 text-blue-300 px-1.5 py-0.5 rounded text-[8px] active:scale-95 transition-all"'} title="เลื่อนขึ้น">▲</button>
+                                <button onclick="swapQueueOrder(${i}, ${i + 1})" ${isLastInWaiting ? 'disabled class="opacity-20 cursor-not-allowed bg-slate-800 text-gray-500 px-1.5 py-0.5 rounded text-[8px]"' : 'class="bg-slate-700 hover:bg-slate-600 text-blue-300 px-1.5 py-0.5 rounded text-[8px] active:scale-95 transition-all"'} title="เลื่อนลง">▼</button>
+                            </div>
                             <button onclick="openSearchModal(currentQueue[${i}], '${safeSong}')" title="เลือกคลิปล่วงหน้า" class="bg-slate-700 hover:bg-slate-600 text-blue-300 p-1.5 rounded-lg text-xs active:scale-95">🔍</button>
                             <button onclick="copyTextToClipboard('${safeSong}', this)" title="คัดลอกชื่อเพลง" class="bg-slate-700 hover:bg-slate-600 text-gray-300 p-1.5 rounded-lg text-xs active:scale-95">📋</button>
+                            <button onclick="deleteQueueItem('${item.id}', '${safeSong}')" title="ลบคิวนี้" class="bg-rose-950/40 hover:bg-rose-900 border border-rose-800/40 text-rose-300 p-1.5 rounded-lg text-xs active:scale-95">🗑️</button>
                         </div>
                     `;
                     nextQueueContainer.appendChild(div);
