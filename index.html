@@ -257,7 +257,7 @@
             "Hc4OrO4LRWw", "0iXj7Zkb3Ik", "zMciAtU4miE"
         ];
 
-        // 🏆 คลังเพลงฮิตพรีเมียม (Auto-DJ)
+        // 🏆 คลังเพลงฮิตพรีเมียม (Auto-DJ) คัดสรรเพลงฮิตหลากหลายแนว
         const premiumBgmList = [
             "คู่คอง ก้อง ห้วยไร่", "เชือกวิเศษ LABANOON", "คำว่าฮักกัน มันเหี่ยถิ่มไส มนต์แคน",
             "ผู้สาวขาเลาะ ลำไย ไหทองคำ", "แพ้ทาง LABANOON", "ห้องนอน Fridaynight",
@@ -270,8 +270,28 @@
             "ฝนตกไหม Three Man Down", "คิดแต่ไม่ถึง Tilly Birds", "โต๊ะริม นนท์ ธนนท์",
             "เพื่อนเล่น ไม่เล่นเพื่อน Tilly Birds", "วัดปะหล่ะ 4EVE", "ทรงอย่างแบด Paper Planes",
             "นะหน้าทอง โจอี้ ภูวศิษฐ์", "คนมีเสน่ห์ ป้าง นครินทร์", "อ้าว อะตอม ชนกันต์",
-            "ดูดี Polycat", "พบกันใหม่ Polycat", "ซมซาน LOSO", "ฝนตกที่หน้าต่าง LOSO"
+            "ดูดี Polycat", "พบกันใหม่ Polycat", "ซมซาน LOSO", "ฝนตกที่หน้าต่าง LOSO",
+            "พิง นนท์ ธนนท์", "รักแท้ นุนิว", "ถ้าเราเจอกันอีก Tilly Birds", "ถ้าเธอรักใครคนหนึ่ง INK WARUNTORN",
+            "สายตาหลอกกันไม่ได้ INK WARUNTORN", "เลือดกรุ๊ปบี B Blood", "เอาปากกามาวง BELL WARISARA",
+            "ยินดี Bodyslam", "แสงสุดท้าย Bodyslam", "ยาพิษ Bodyslam", "เธอเก่ง Jetset'er",
+            "กรรม ป้าง นครินทร์", "ดวงใจ The Parkinson", "น้ำตาหยดไหน TaitosmitH", "Hello Mama TaitosmitH",
+            "สลักจิต ป๊อบ ปองกูล Feat. ดา เอ็นโดรฟิน", "กลิ่นดอกไม้ Newery", "พิจารณา Musketeers",
+            "ซูลูปาก้า ตาปาเฮ THE TOYS", "ลาลาลอย THE TOYS", "หน้าหนาวที่แล้ว The TOYS",
+            "ฝันถึงแฟนเก่า Three Man Down", "ถ้าเธอคิดเหมือนกัน Three Man Down"
         ];
+
+        // 🔀 ระบบ Smart Shuffle Pool: สับไพ่เพลง BGM ไม่ให้เล่นซ้ำเด็ดขาดจนกว่าจะครบทุกเพลง
+        let bgmShufflePool = [];
+        function getNextBgmTitle() {
+            if (bgmShufflePool.length === 0) {
+                bgmShufflePool = [...premiumBgmList];
+                for (let i = bgmShufflePool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [bgmShufflePool[i], bgmShufflePool[j]] = [bgmShufflePool[j], bgmShufflePool[i]];
+                }
+            }
+            return bgmShufflePool.pop();
+        }
 
         let currentQueue = [];
         let isVipMode = false;
@@ -391,7 +411,7 @@
             const autoPlay = document.getElementById('autoPlayNext').checked;
             if (!isDjReady || !autoPlay || isVipMode) return;
 
-            const randomSongTitle = premiumBgmList[Math.floor(Math.random() * premiumBgmList.length)];
+            const randomSongTitle = getNextBgmTitle();
 
             currentVipSong = {
                 title: "🎧 ออโต้ดีเจ: " + randomSongTitle,
@@ -890,9 +910,22 @@
             if (status === 'skipped' && !confirm("แน่ใจหรือไม่ว่าจะ 'ข้าม' คิวนี้?")) return;
 
             const finishedItem = currentQueue[0];
-            delete assignedVideos[finishedItem.id];
+            const finishedId = finishedItem.id;
+            delete assignedVideos[finishedId];
 
-            // 1. บันทึกลง History ใน Firebase เผื่อตรวจสอบย้อนหลัง
+            // 1. นำเพลงออกจาก local queue ทันที และเคลียร์สถานะเพลงที่กำลังเล่น
+            currentQueue.shift();
+            currentPlayingSongId = null;
+            renderUI();
+
+            // 2. ถ้ามีคิวถัดไป ให้เล่นคิวถัดไปทันที ถ้าคิวว่าง ให้สุ่มเพลง BGM ทันที
+            if (currentQueue.length > 0) {
+                handleNewCurrentSong(currentQueue[0]);
+            } else {
+                playRandomBGM();
+            }
+
+            // 3. บันทึกลง History ใน Firebase เผื่อตรวจสอบย้อนหลัง
             try {
                 historyRef.push({
                     song: finishedItem.song || "",
@@ -903,16 +936,16 @@
                 });
             } catch(e) {}
 
-            // 2. ลบคิวออกจาก Firebase Realtime (ทุกคนและดีเจจะเห็นการลบทันที 0.1 วิ)
+            // 4. ลบคิวออกจาก Firebase Realtime (ทุกคนและดีเจจะเห็นการลบทันที 0.1 วิ)
             try {
-                await queueRef.child(finishedItem.id).remove();
+                await queueRef.child(finishedId).remove();
             } catch (err) {
                 console.error("Remove queue item error:", err);
             }
 
-            // 3. ซิงค์สถานะกลับไปบันทึกลง Google Sheet ในพื้นหลัง (ไม่ขัดจังหวะหน้าจอ)
-            if (finishedItem.id) {
-                fetch(`${GAS_API_URL}?action=updateStatus&id=${encodeURIComponent(finishedItem.id)}&status=${encodeURIComponent(status)}`, { redirect: 'follow' }).catch(() => {});
+            // 5. ซิงค์สถานะกลับไปบันทึกลง Google Sheet ในพื้นหลัง (ไม่ขัดจังหวะหน้าจอ)
+            if (finishedId) {
+                fetch(`${GAS_API_URL}?action=updateStatus&id=${encodeURIComponent(finishedId)}&status=${encodeURIComponent(status)}`, { redirect: 'follow' }).catch(() => {});
             }
         }
 
